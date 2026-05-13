@@ -1,0 +1,38 @@
+// =====================================================
+// Testes adicionais após feedback do E-fólio A
+// Grupo DUALCORE
+// =====================================================
+
+// -----------------------------------------------------
+// TESTE 1 — Reais com formatos adicionais
+// Deve aceitar:
+//   3.
+//   .5
+//   3.14
+// -----------------------------------------------------
+
+vazio principal(vazio) {
+
+    real a = 3.;
+    real b = .5;
+    real c = 3.14;
+
+    escrever(a);
+    escrever(b);
+    escrever(c);
+
+    // -------------------------------------------------
+    // TESTE 2 — Carácter inválido
+    // Deve produzir ERROR_CHAR
+    // -------------------------------------------------
+
+    inteiro x = @;
+
+    // -------------------------------------------------
+    // TESTE 3 — String não terminada
+    // Deve produzir UNCLOSED_STRING
+    // -------------------------------------------------
+
+    escrevers("teste);
+
+}

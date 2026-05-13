@@ -1,0 +1,73 @@
+/**
+ * exemplo_correto.mocp — Programa válido em MOCP
+ * UC 21018 — Compilação, Universidade Aberta, 2025/2026
+ * Grupo DUALCORE: João Rodrigues (2203474) | Maria Costa (2304361)
+ * Testa: protótipos, funções, recursão, vetores, ciclos, I/O, casting
+ */
+
+// Protótipo de função recursiva
+inteiro fatorial(inteiro n);
+
+// Função principal
+vazio principal(vazio) {
+    inteiro resultado;
+    inteiro num;
+    real valor_real;
+    inteiro vetor[10];
+    inteiro i;
+    inteiro j;
+    inteiro temp;
+    
+    // Entrada
+    escrever(10);
+    num = ler();
+    
+    // Cálculo recursivo
+    resultado = fatorial(num);
+    escrever(resultado);
+    
+    // Cast: inteiro para real
+    valor_real = (real) resultado;
+    escrever(valor_real);
+    
+    // Inicializar vetor
+    i = 0;
+    enquanto(i < 10) {
+        vetor[i] = i * 2;
+        i = i + 1;
+    }
+    
+    // Bubble sort simples
+    i = 0;
+    enquanto(i < 10) {
+        j = 0;
+        enquanto(j < 9) {
+            se(vetor[j] > vetor[j + 1]) {
+                temp = vetor[j];
+                vetor[j] = vetor[j + 1];
+                vetor[j + 1] = temp;
+            }
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    
+    // Escrever vetor
+    i = 0;
+    enquanto(i < 10) {
+        escrever(vetor[i]);
+        i = i + 1;
+    }
+}
+
+// Implementação da função recursiva
+inteiro fatorial(inteiro n) {
+    inteiro resultado;
+    se(n <= 1) {
+        resultado = 1;
+    }
+    senao {
+        resultado = n * fatorial(n - 1);
+    }
+    retornar resultado;
+}

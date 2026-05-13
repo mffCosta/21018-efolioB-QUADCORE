@@ -1,0 +1,77 @@
+/**
+ * teste_ciclos_vetores.mocp — Teste de ciclos, vetores e funções múltiplas
+ * UC 21018 — Compilação, Universidade Aberta, 2025/2026
+ * Grupo DUALCORE: João Rodrigues (2203474) | Maria Costa (2304361)
+ */
+
+// Protótipos
+vazio imprimirVetor(inteiro v[], inteiro tamanho);
+inteiro maximo(inteiro a, inteiro b);
+
+// Função auxiliar: encontrar máximo
+inteiro maximo(inteiro a, inteiro b) {
+    inteiro resultado;
+    se(a >= b) {
+        resultado = a;
+    }
+    senao {
+        resultado = b;
+    }
+    retornar resultado;
+}
+
+// Função auxiliar: imprimir vetor
+vazio imprimirVetor(inteiro v[], inteiro tamanho) {
+    inteiro i;
+    i = 0;
+    enquanto(i < tamanho) {
+        escrever(v[i]);
+        i = i + 1;
+    }
+}
+
+// Programa principal
+vazio principal(vazio) {
+    inteiro numeros[5];
+    inteiro i;
+    inteiro j;
+    inteiro temp;
+    inteiro soma;
+    inteiro resultado;
+    
+    // Inicializar vetor com valores
+    numeros[0] = 50;
+    numeros[1] = 30;
+    numeros[2] = 80;
+    numeros[3] = 20;
+    numeros[4] = 40;
+    
+    // Ordenação por seleção
+    i = 0;
+    enquanto(i < 5) {
+        j = i + 1;
+        enquanto(j < 5) {
+            se(numeros[i] > numeros[j]) {
+                temp = numeros[i];
+                numeros[i] = numeros[j];
+                numeros[j] = temp;
+            }
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    
+    // Chamar função para imprimir
+    imprimirVetor(numeros, 5);
+    
+    // Teste de ciclo para
+    soma = 0;
+    para(i = 0; i < 5; i = i + 1) {
+        soma = soma + numeros[i];
+    }
+    escrever(soma);
+    
+    // Teste de máximo
+    resultado = maximo(soma, 100);
+    escrever(resultado);
+}

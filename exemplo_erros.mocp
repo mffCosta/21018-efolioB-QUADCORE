@@ -1,0 +1,50 @@
+/**
+ * exemplo_erros.mocp — Programa com erros: palavras-chave C e operadores proibidos
+ * UC 21018 — Compilação, Universidade Aberta, 2025/2026
+ * Grupo DUALCORE: João Rodrigues (2203474) | Maria Costa (2304361)
+ * Este ficheiro não deve compilar — contém erros intencionais
+ */
+
+// ERRO 1: 'int' em vez de 'inteiro'
+int somar(int a, int b);
+
+// ERRO 2: 'void' em vez de 'vazio', 'main' em vez de 'principal'
+void main() {
+    int x = 5;
+    int y = 10;
+    double resultado;
+    
+    // ERRO 3: Operador '++' não é suportado
+    x++;
+    
+    // ERRO 4: Operador '+=' não é suportado
+    y += 3;
+    
+    // ERRO 5: Palavra-chave 'if' em vez de 'se'
+    if(x > y) {
+        resultado = (double) x;
+    } else {
+        resultado = (double) y;
+    }
+    
+    // ERRO 6: Palavra-chave 'while' em vez de 'enquanto'
+    while(x > 0) {
+        x--;  // Operador '--' proibido
+        resultado = resultado - 1;
+    }
+    
+    // ERRO 7: Palavra-chave 'for' em vez de 'para'
+    for(int i = 0; i < 5; i++) {
+        escrever(i);
+    }
+    
+    // ERRO 8: Palavra-chave 'return' em vez de 'retornar'
+    return resultado;
+}
+
+// ERRO 9: 'void' em vez de 'vazio'
+void somar(int a, int b) {
+    int soma;
+    soma = a + b;
+    retornar soma;
+}
