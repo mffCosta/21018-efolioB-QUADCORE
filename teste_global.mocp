@@ -1,0 +1,114 @@
+// =====================================================
+// teste_global.mocp
+// Teste integrado da linguagem MOCP — E-fólio B
+// Grupo QUADCORE
+// =====================================================
+
+inteiro fatorial(inteiro n);
+inteiro soma(inteiro a, inteiro b);
+inteiro maximo(inteiro a, inteiro b);
+vazio imprimirVetor(inteiro v[], inteiro tamanho);
+
+inteiro fatorial(inteiro n) {
+    inteiro resultado;
+
+    se (n <= 1) {
+        resultado = 1;
+    } senao {
+        resultado = n * fatorial(n - 1);
+    }
+
+    retornar resultado;
+}
+
+inteiro soma(inteiro a, inteiro b) {
+    inteiro resultado;
+    resultado = a + b;
+    retornar resultado;
+}
+
+inteiro maximo(inteiro a, inteiro b) {
+    inteiro resultado;
+
+    se (a >= b) {
+        resultado = a;
+    } senao {
+        resultado = b;
+    }
+
+    retornar resultado;
+}
+
+vazio imprimirVetor(inteiro v[], inteiro tamanho) {
+    inteiro i;
+
+    i = 0;
+    enquanto (i < tamanho) {
+        escrever(v[i]);
+        i = i + 1;
+    }
+}
+
+vazio principal(vazio) {
+    inteiro n;
+    inteiro fat;
+    inteiro s;
+    inteiro maior;
+
+    real valorReal;
+
+    inteiro numeros[5];
+    inteiro i;
+    inteiro total;
+
+    inteiro ot1;
+    inteiro ot2;
+    inteiro ot3;
+    inteiro ot4;
+
+    n = 5;
+    fat = fatorial(n);
+    escrever(fat);
+
+    s = soma(10, 20);
+    escrever(s);
+
+    maior = maximo(fat, s);
+    escrever(maior);
+
+    valorReal = (real) maior;
+    escrever(valorReal);
+
+    numeros[0] = 50;
+    numeros[1] = 30;
+    numeros[2] = 80;
+    numeros[3] = 20;
+    numeros[4] = 40;
+
+    imprimirVetor(numeros, 5);
+
+    total = 0;
+
+    para (i = 0; i < 5; i = i + 1) {
+        total = total + numeros[i];
+    }
+
+    escrever(total);
+
+    se (total > 100 && maior > 10) {
+        escrever(total);
+    } senao {
+        escrever(maior);
+    }
+
+    // Expressões criadas para demonstrar otimização TAC
+    ot1 = 2 + 3 * 4;
+    ot2 = ot1 + 0;
+    ot3 = ot2 * 1;
+    ot4 = ot3 * 0;
+
+    escrever(ot1);
+    escrever(ot2);
+    escrever(ot3);
+    escrever(ot4);
+}

@@ -1,8 +1,16 @@
 """
-semantic.py — Análise semântica para MOCP (type checking, symbol table, etc).
+semantic.py — Análise semântica para MOCP.
 UC 21018 — Compilação, Universidade Aberta, 2025/2026
 Autores: João Rodrigues (2203474) | Maria Costa (2304361)
-Grupo: DUALCORE
+Grupo: QUADCORE
+
+Responsabilidades:
+  - gestão de tabela de símbolos;
+  - validação de variáveis e funções;
+  - validação de tipos;
+  - validação de vetores;
+  - validação de retornos;
+  - preparação semântica para geração de código intermédio.
 """
 
 from dataclasses import dataclass
@@ -133,6 +141,7 @@ class SemanticAnalyzer:
         self._register_function_headers(program.functions)
 
         self._check_main_exists()
+        self._check_main_signature()
 
         for decl in program.global_decls:
             self.visit_var_decl(decl)
@@ -158,10 +167,10 @@ class SemanticAnalyzer:
             "escreverc", "vazio", [ParamNode("inteiro", "x", False)], True
         )
         self.functions["escrevers"] = FunctionSymbol(
-            "escrevers", "vazio", [ParamNode("inteiro[]", "s", True)], True
+            "escrevers", "vazio", [ParamNode("inteiro", "s", True)], True
         )
         self.functions["escreverv"] = FunctionSymbol(
-            "escreverv", "vazio", [ParamNode("inteiro[]", "v", True)], True
+            "escreverv", "vazio", [ParamNode("inteiro", "v", True)], True
         )
 
     def _register_prototypes(self, prototypes: List[PrototypeNode]) -> None:
@@ -178,14 +187,14 @@ class SemanticAnalyzer:
                     existing.return_type,
                     existing.params,
                     proto.return_type,
-                    proto.params
+                    proto.params,
                 )
             else:
                 self.functions[proto.name] = FunctionSymbol(
                     name=proto.name,
                     return_type=proto.return_type,
                     params=proto.params,
-                    has_definition=False
+                    has_definition=False,
                 )
 
     def _register_function_headers(self, functions: List[FunctionDefNode]) -> None:
@@ -202,7 +211,7 @@ class SemanticAnalyzer:
                     existing.return_type,
                     existing.params,
                     func.return_type,
-                    func.params
+                    func.params,
                 )
 
                 if existing.has_definition:
@@ -216,12 +225,33 @@ class SemanticAnalyzer:
                     name=func.name,
                     return_type=func.return_type,
                     params=func.params,
-                    has_definition=True
+                    has_definition=True,
                 )
 
     def _check_main_exists(self) -> None:
         if "principal" not in self.functions:
             raise SemanticError("A função 'principal' não foi definida.")
+
+    def _check_main_signature(self) -> None:
+        principal = self.functions.get("principal")
+
+        if principal is None:
+            return
+
+        if principal.return_type != "vazio":
+            raise SemanticError(
+                "A função 'principal' deve ter tipo de retorno 'vazio'."
+            )
+
+        if len(principal.params) != 0:
+            raise SemanticError(
+                "A função 'principal' não deve receber parâmetros. Use principal(vazio)."
+            )
+
+        if not principal.has_definition:
+            raise SemanticError(
+                "A função 'principal' foi declarada, mas não foi definida."
+            )
 
     def _check_prototypes_defined(self) -> None:
         for name, fn in self.functions.items():
@@ -262,7 +292,6 @@ class SemanticAnalyzer:
 
     def visit_function(self, func: FunctionDefNode) -> None:
         self.current_function = self.functions[func.name]
-
         self.symbols.enter_scope()
 
         for param in func.params:
@@ -271,11 +300,16 @@ class SemanticAnalyzer:
                     VariableSymbol(
                         name=param.name,
                         var_type=param.param_type,
-                        is_array=param.is_array
+                        is_array=param.is_array,
                     )
                 )
 
         self.visit_block(func.body, create_scope=False)
+
+        if func.return_type != "vazio" and not self._block_has_return(func.body):
+            raise SemanticError(
+                f"A função '{func.name}' deve conter pelo menos uma instrução 'retornar'."
+            )
 
         self.symbols.exit_scope()
         self.current_function = None
@@ -293,6 +327,26 @@ class SemanticAnalyzer:
         if create_scope:
             self.symbols.exit_scope()
 
+    def _block_has_return(self, block: BlockNode) -> bool:
+        for stmt in block.statements:
+            if isinstance(stmt, ReturnStmtNode):
+                return True
+
+            if isinstance(stmt, BlockNode) and self._block_has_return(stmt):
+                return True
+
+            if isinstance(stmt, IfStmtNode):
+                then_has = self._block_has_return(stmt.then_block)
+                else_has = (
+                    self._block_has_return(stmt.else_block)
+                    if stmt.else_block is not None
+                    else False
+                )
+                if then_has and else_has:
+                    return True
+
+        return False
+
     # -----------------------------------------------------
     # Declarações
     # -----------------------------------------------------
@@ -305,12 +359,17 @@ class SemanticAnalyzer:
                 )
 
             elif isinstance(item, VarInitDeclNode):
+                value_type = self.visit_expr(item.value)
+                self._check_assignment_compatible(decl.var_type, value_type)
                 self.symbols.declare(
                     VariableSymbol(item.name, decl.var_type, False)
                 )
-                self.visit_expr(item.value)
 
             elif isinstance(item, VarSizedArrayDeclNode):
+                if item.size <= 0:
+                    raise SemanticError(
+                        f"O vetor '{item.name}' deve ter tamanho positivo."
+                    )
                 self.symbols.declare(
                     VariableSymbol(item.name, decl.var_type, True)
                 )
@@ -321,17 +380,27 @@ class SemanticAnalyzer:
                 )
 
             elif isinstance(item, VarArrayInitDeclNode):
+                for expr in item.values:
+                    expr_type = self.visit_expr(expr)
+                    self._check_assignment_compatible(decl.var_type, expr_type)
+
                 self.symbols.declare(
                     VariableSymbol(item.name, decl.var_type, True)
                 )
-                for expr in item.values:
-                    self.visit_expr(expr)
 
             elif isinstance(item, VarArrayExprInitDeclNode):
+                value_type = self.visit_expr(item.value)
+                expected = f"{decl.var_type}[]"
+
+                if value_type != expected:
+                    raise SemanticError(
+                        f"Inicialização incompatível do vetor '{item.name}': "
+                        f"recebido '{value_type}', esperado '{expected}'."
+                    )
+
                 self.symbols.declare(
                     VariableSymbol(item.name, decl.var_type, True)
                 )
-                self.visit_expr(item.value)
 
     # -----------------------------------------------------
     # Instruções
@@ -339,8 +408,9 @@ class SemanticAnalyzer:
 
     def visit_stmt(self, stmt) -> None:
         if isinstance(stmt, AssignStmtNode):
-            self.visit_location(stmt.target)
-            self.visit_expr(stmt.value)
+            target_type = self.visit_location(stmt.target)
+            value_type = self.visit_expr(stmt.value)
+            self._check_assignment_compatible(target_type, value_type)
 
         elif isinstance(stmt, IfStmtNode):
             self.visit_cond(stmt.condition)
@@ -353,8 +423,6 @@ class SemanticAnalyzer:
             self.visit_block(stmt.body)
 
         elif isinstance(stmt, ForStmtNode):
-            self.symbols.enter_scope()
-
             if stmt.init is not None:
                 self.visit_assign_expr(stmt.init)
             if stmt.condition is not None:
@@ -362,9 +430,7 @@ class SemanticAnalyzer:
             if stmt.update is not None:
                 self.visit_assign_expr(stmt.update)
 
-            self.visit_block(stmt.body, create_scope=False)
-
-            self.symbols.exit_scope()
+            self.visit_block(stmt.body)
 
         elif isinstance(stmt, ReturnStmtNode):
             self.visit_return_stmt(stmt)
@@ -379,27 +445,35 @@ class SemanticAnalyzer:
             self.visit_block(stmt)
 
         else:
-            raise SemanticError(f"Instrução sem tratamento semântico: {type(stmt).__name__}")
+            raise SemanticError(
+                f"Instrução sem tratamento semântico: {type(stmt).__name__}"
+            )
 
     def visit_assign_expr(self, expr: AssignExprNode) -> None:
-        self.visit_location(expr.target)
-        self.visit_expr(expr.value)
+        target_type = self.visit_location(expr.target)
+        value_type = self.visit_expr(expr.value)
+        self._check_assignment_compatible(target_type, value_type)
 
     def visit_return_stmt(self, stmt: ReturnStmtNode) -> None:
         if self.current_function is None:
             raise SemanticError("Instrução 'retornar' fora de função.")
 
-        if self.current_function.return_type == "vazio":
+        expected = self.current_function.return_type
+
+        if expected == "vazio":
             if stmt.value is not None:
                 raise SemanticError(
-                    f"A função '{self.current_function.name}' é do tipo 'vazio' e não deve retornar valor."
+                    f"A função '{self.current_function.name}' é do tipo 'vazio' "
+                    "e não deve retornar valor."
                 )
         else:
             if stmt.value is None:
                 raise SemanticError(
                     f"A função '{self.current_function.name}' deve retornar um valor."
                 )
-            self.visit_expr(stmt.value)
+
+            received = self.visit_expr(stmt.value)
+            self._check_assignment_compatible(expected, received)
 
     # -----------------------------------------------------
     # Condições
@@ -407,11 +481,20 @@ class SemanticAnalyzer:
 
     def visit_cond(self, cond) -> None:
         if isinstance(cond, ExprAsCondNode):
-            self.visit_expr(cond.expr)
+            expr_type = self.visit_expr(cond.expr)
+            self._check_condition_type(expr_type)
 
         elif isinstance(cond, RelationalCondNode):
-            self.visit_expr(cond.left)
-            self.visit_expr(cond.right)
+            left_type = self.visit_expr(cond.left)
+            right_type = self.visit_expr(cond.right)
+
+            self._check_condition_type(left_type)
+            self._check_condition_type(right_type)
+
+            if left_type.endswith("[]") or right_type.endswith("[]"):
+                raise SemanticError(
+                    "Condições relacionais não podem ser aplicadas a vetores."
+                )
 
         elif isinstance(cond, NotCondNode):
             self.visit_cond(cond.operand)
@@ -421,7 +504,9 @@ class SemanticAnalyzer:
             self.visit_cond(cond.right)
 
         else:
-            raise SemanticError(f"Condição sem tratamento semântico: {type(cond).__name__}")
+            raise SemanticError(
+                f"Condição sem tratamento semântico: {type(cond).__name__}"
+            )
 
     # -----------------------------------------------------
     # Expressões
@@ -431,35 +516,45 @@ class SemanticAnalyzer:
         if isinstance(expr, IdentifierNode):
             return self.visit_identifier(expr)
 
-        elif isinstance(expr, ArrayAccessNode):
+        if isinstance(expr, ArrayAccessNode):
             return self.visit_array_access(expr)
 
-        elif isinstance(expr, FunctionCallNode):
+        if isinstance(expr, FunctionCallNode):
             return self.visit_function_call(expr)
 
-        elif isinstance(expr, BinaryExprNode):
+        if isinstance(expr, BinaryExprNode):
             left_type = self.visit_expr(expr.left)
             right_type = self.visit_expr(expr.right)
             return self._infer_binary_expr_type(left_type, right_type, expr.operator)
 
-        elif isinstance(expr, UnaryExprNode):
-            return self.visit_expr(expr.operand)
+        if isinstance(expr, UnaryExprNode):
+            operand_type = self.visit_expr(expr.operand)
+            if operand_type.endswith("[]"):
+                raise SemanticError(
+                    f"Operador unário '{expr.operator}' não permitido com vetor."
+                )
+            return operand_type
 
-        elif isinstance(expr, CastExprNode):
-            self.visit_expr(expr.expr)
+        if isinstance(expr, CastExprNode):
+            inner_type = self.visit_expr(expr.expr)
+            if inner_type.endswith("[]"):
+                raise SemanticError("Não é permitido fazer cast de vetores.")
             return expr.target_type
 
-        elif isinstance(expr, IntLiteralNode):
+        if isinstance(expr, IntLiteralNode):
             return "inteiro"
 
-        elif isinstance(expr, RealLiteralNode):
+        if isinstance(expr, RealLiteralNode):
             return "real"
 
-        elif isinstance(expr, StringLiteralNode):
+        if isinstance(expr, StringLiteralNode):
+            # Em MOCP, strings são representadas como vetores de inteiros
+            # terminados em 0.
             return "inteiro[]"
 
-        else:
-            raise SemanticError(f"Expressão sem tratamento semântico: {type(expr).__name__}")
+        raise SemanticError(
+            f"Expressão sem tratamento semântico: {type(expr).__name__}"
+        )
 
     def visit_identifier(self, ident: IdentifierNode) -> str:
         symbol = self.symbols.lookup(ident.name)
@@ -492,10 +587,11 @@ class SemanticAnalyzer:
     def visit_location(self, loc) -> str:
         if isinstance(loc, IdentifierNode):
             return self.visit_identifier(loc)
-        elif isinstance(loc, ArrayAccessNode):
+
+        if isinstance(loc, ArrayAccessNode):
             return self.visit_array_access(loc)
-        else:
-            raise SemanticError(f"Localização inválida: {type(loc).__name__}")
+
+        raise SemanticError(f"Localização inválida: {type(loc).__name__}")
 
     def visit_function_call(self, call: FunctionCallNode) -> str:
         fn = self.functions.get(call.name)
@@ -515,15 +611,21 @@ class SemanticAnalyzer:
                 f"mas eram esperados {expected}."
             )
 
-        # Regras especiais para funções de escrita:
-        # - escrever / escreverc aceitam inteiro ou real
-        # - escrevers / escreverv mantêm restrições mais específicas
-        if call.name in {"escrever", "escreverc"}:
+        if call.name == "escrever":
             for i, arg_type in enumerate(arg_types, start=1):
-                if arg_type not in {"inteiro", "real"}:
+                if arg_type.endswith("[]"):
                     raise SemanticError(
-                        f"Tipo incompatível no argumento {i} da função '{call.name}': "
-                        f"recebido '{arg_type}', esperado 'inteiro' ou 'real'."
+                        f"Tipo incompatível no argumento {i} da função 'escrever': "
+                        f"recebido '{arg_type}', esperado valor simples."
+                    )
+            return fn.return_type
+
+        if call.name == "escreverc":
+            for i, arg_type in enumerate(arg_types, start=1):
+                if arg_type != "inteiro":
+                    raise SemanticError(
+                        f"Tipo incompatível no argumento {i} da função 'escreverc': "
+                        f"recebido '{arg_type}', esperado 'inteiro'."
                     )
             return fn.return_type
 
@@ -531,7 +633,7 @@ class SemanticAnalyzer:
             for i, arg_type in enumerate(arg_types, start=1):
                 if arg_type != "inteiro[]":
                     raise SemanticError(
-                        f"Tipo incompatível no argumento {i} da função '{call.name}': "
+                        f"Tipo incompatível no argumento {i} da função 'escrevers': "
                         f"recebido '{arg_type}', esperado 'inteiro[]'."
                     )
             return fn.return_type
@@ -540,33 +642,26 @@ class SemanticAnalyzer:
             for i, arg_type in enumerate(arg_types, start=1):
                 if not arg_type.endswith("[]"):
                     raise SemanticError(
-                        f"Tipo incompatível no argumento {i} da função '{call.name}': "
+                        f"Tipo incompatível no argumento {i} da função 'escreverv': "
                         f"recebido '{arg_type}', esperado vetor."
                     )
             return fn.return_type
 
-        # validação normal
         for i, (arg_type, param) in enumerate(zip(arg_types, fn.params), start=1):
             expected_type = param.param_type
-
             if param.is_array and not expected_type.endswith("[]"):
-                expected_type = expected_type + "[]"
+                expected_type += "[]"
 
-            if arg_type != expected_type:
-                # aceitar coerções básicas entre inteiro e real
-                if not (
-                    (arg_type == "inteiro" and expected_type == "real") or
-                    (arg_type == "real" and expected_type == "inteiro")
-                ):
-                    raise SemanticError(
-                        f"Tipo incompatível no argumento {i} da função '{call.name}': "
-                        f"recebido '{arg_type}', esperado '{expected_type}'."
-                    )
+            if not self._types_compatible(expected_type, arg_type):
+                raise SemanticError(
+                    f"Tipo incompatível no argumento {i} da função '{call.name}': "
+                    f"recebido '{arg_type}', esperado '{expected_type}'."
+                )
 
         return fn.return_type
 
     # -----------------------------------------------------
-    # Inferência simples de tipos
+    # Inferência e validações de tipos
     # -----------------------------------------------------
 
     def _infer_binary_expr_type(self, left_type: str, right_type: str, operator: str) -> str:
@@ -583,9 +678,34 @@ class SemanticAnalyzer:
             return "inteiro"
 
         if operator in {"<", "<=", ">", ">=", "==", "!="}:
+            self._check_condition_type(left_type)
+            self._check_condition_type(right_type)
             return "inteiro"
 
         if left_type == "real" or right_type == "real":
             return "real"
 
         return "inteiro"
+
+    def _check_assignment_compatible(self, target_type: str, value_type: str) -> None:
+        if not self._types_compatible(target_type, value_type):
+            raise SemanticError(
+                f"Atribuição incompatível: destino '{target_type}', valor '{value_type}'."
+            )
+
+    def _types_compatible(self, target_type: str, value_type: str) -> bool:
+        if target_type == value_type:
+            return True
+
+        # Conversões numéricas básicas, coerentes com a especificação da MOCP
+        # e com as conversões simples entre inteiro e real.
+        if target_type in {"inteiro", "real"} and value_type in {"inteiro", "real"}:
+            return True
+
+        return False
+
+    def _check_condition_type(self, typ: str) -> None:
+        if typ.endswith("[]"):
+            raise SemanticError(
+                f"Tipo '{typ}' não pode ser usado diretamente como condição."
+            )

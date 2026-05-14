@@ -1,0 +1,14 @@
+// =====================================================
+// teste_erros_lexicos.mocp
+// Teste de erros léxicos
+// =====================================================
+
+vazio principal(vazio) {
+    inteiro x;
+
+    // carácter inválido
+    x = @;
+
+    // string não terminada
+    escrevers("texto sem fim);
+}

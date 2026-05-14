@@ -2,7 +2,7 @@
 main.py — Programa principal do compilador MOCP.
 UC 21018 — Compilação, Universidade Aberta, 2025/2026
 Autores: João Rodrigues (2203474) | Maria Costa (2304361)
-Grupo: DUALCORE
+Grupo: QUADCORE
 
 Pipeline de compilação:
   1. Leitura do ficheiro
@@ -10,12 +10,14 @@ Pipeline de compilação:
   3. Análise sintática
   4. Construção da AST
   5. Análise semântica
+  6. Geração de código intermédio TAC
+  7. Otimização do código intermédio
 """
 
 import sys
 import re
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from antlr4 import FileStream, CommonTokenStream
 from antlr4.error.ErrorListener import ErrorListener
@@ -26,6 +28,8 @@ from MOCPParser import MOCPParser
 from ast_builder import ASTBuilderVisitor
 from semantic import SemanticAnalyzer, SemanticError
 from error_handler import verificar_tokens_proibidos
+from tac_generator import TACGenerator, TACGenerationError
+from optimizer import TACOptimizer
 
 
 # =========================================================
@@ -35,7 +39,7 @@ from error_handler import verificar_tokens_proibidos
 class CompilationError:
     """
     Representa um erro detetado durante a compilação.
-    phase: LÉXICO | SINTÁTICO | SEMÂNTICO
+    phase: LÉXICO | SINTÁTICO | SEMÂNTICO | TAC
     """
 
     def __init__(self, phase: str, line: int, column: int, message: str):
@@ -72,7 +76,12 @@ class CollectingErrorListener(ErrorListener):
 
 def print_usage() -> None:
     print("Uso:")
-    print("  python main.py <ficheiro_entrada.mocp> [ficheiro_saida_ast.txt]")
+    print("  python main.py <ficheiro_entrada.mocp> [ficheiro_saida_ast.txt] [ficheiro_saida_tac.txt]")
+    print()
+    print("Exemplos:")
+    print("  python main.py exemplo_correto.mocp")
+    print("  python main.py exemplo_correto.mocp ast.txt")
+    print("  python main.py exemplo_correto.mocp ast.txt codigo.tac")
 
 
 def print_errors(errors: List[CompilationError]) -> None:
@@ -85,6 +94,29 @@ def save_text_file(path: Path, text: str) -> None:
     path.write_text(text, encoding="utf-8")
 
 
+def convert_error_message(err_msg: str) -> CompilationError:
+    """
+    Converte mensagens produzidas por error_handler.py para CompilationError.
+    """
+    try:
+        match = re.search(
+            r'\[([^\]]+)\]\s+linha\s+(\d+),\s+coluna\s+(\d+):\s*(.*)',
+            err_msg
+        )
+
+        if match:
+            phase = match.group(1)
+            line = int(match.group(2))
+            column = int(match.group(3))
+            message = match.group(4)
+            return CompilationError(phase, line, column, message)
+
+        return CompilationError("LÉXICO/SINTÁTICO", 0, 0, err_msg)
+
+    except Exception:
+        return CompilationError("LÉXICO/SINTÁTICO", 0, 0, err_msg)
+
+
 # =========================================================
 # Programa principal
 # =========================================================
@@ -93,7 +125,7 @@ def main() -> int:
     # -----------------------------------------------------
     # 1. Validar argumentos
     # -----------------------------------------------------
-    if len(sys.argv) < 2 or len(sys.argv) > 3:
+    if len(sys.argv) < 2 or len(sys.argv) > 4:
         print_usage()
         return 1
 
@@ -107,7 +139,8 @@ def main() -> int:
         print(f"Erro: '{input_path}' não é um ficheiro válido.")
         return 1
 
-    output_ast_path = Path(sys.argv[2]) if len(sys.argv) == 3 else None
+    output_ast_path: Optional[Path] = Path(sys.argv[2]) if len(sys.argv) >= 3 else None
+    output_tac_path: Optional[Path] = Path(sys.argv[3]) if len(sys.argv) == 4 else None
 
     # -----------------------------------------------------
     # 2. Ler ficheiro
@@ -132,39 +165,11 @@ def main() -> int:
 
     token_stream = CommonTokenStream(lexer)
 
-    # Detetar tokens C proibidos, operadores proibidos e erros léxicos controlados
     proibidos_errors = verificar_tokens_proibidos(token_stream)
 
     for err_msg in proibidos_errors:
-        # Converter formato "erro" em CompilationError.
-        # Formato esperado: "[FASE] linha X, coluna Y: mensagem"
-        try:
-            match = re.search(
-                r'\[([^\]]+)\]\s+linha\s+(\d+),\s+coluna\s+(\d+):\s*(.*)',
-                err_msg
-            )
-            if match:
-                phase = match.group(1)
-                line = int(match.group(2))
-                column = int(match.group(3))
-                message = match.group(4)
-                errors.append(CompilationError(phase, line, column, message))
-            else:
-                errors.append(CompilationError(
-                    "LÉXICO/SINTÁTICO",
-                    0,
-                    0,
-                    err_msg
-                ))
-        except Exception:
-            errors.append(CompilationError(
-                "LÉXICO/SINTÁTICO",
-                0,
-                0,
-                err_msg
-            ))
-            
-    # If forbidden tokens found, report immediately
+        errors.append(convert_error_message(err_msg))
+
     if proibidos_errors:
         print_errors(errors)
         return 1
@@ -185,15 +190,12 @@ def main() -> int:
         print(f"Erro interno durante a análise sintática: {e}")
         return 1
 
-    # -----------------------------------------------------
-    # 7. Se houver erros léxicos/sintáticos, reportar
-    # -----------------------------------------------------
     if errors:
         print_errors(errors)
         return 1
 
     # -----------------------------------------------------
-    # 8. Construção da AST
+    # 7. Construção da AST
     # -----------------------------------------------------
     try:
         builder = ASTBuilderVisitor()
@@ -203,7 +205,7 @@ def main() -> int:
         return 1
 
     # -----------------------------------------------------
-    # 9. Análise semântica
+    # 8. Análise semântica
     # -----------------------------------------------------
     try:
         analyzer = SemanticAnalyzer()
@@ -216,23 +218,89 @@ def main() -> int:
         return 1
 
     # -----------------------------------------------------
+    # 9. Geração de TAC
+    # -----------------------------------------------------
+    try:
+        tac_generator = TACGenerator()
+        tac_program = tac_generator.generate(ast)
+    except TACGenerationError as e:
+        print(f"[TAC] {e}")
+        return 1
+    except Exception as e:
+        print(f"Erro interno durante a geração de TAC: {e}")
+        return 1
+
+    # -----------------------------------------------------
+    # 10. Otimização de TAC
+    # -----------------------------------------------------
+    try:
+        optimizer = TACOptimizer()
+        optimized_tac_program = optimizer.optimize(tac_program)
+    except Exception as e:
+        print(f"Erro interno durante a otimização de TAC: {e}")
+        return 1
+    
+    # -----------------------------------------------------
     # 10. Imprimir AST
     # -----------------------------------------------------
     print("Análise concluída com sucesso.")
+    print()
     print("AST gerada:")
+    print("----------------------------------------")
 
     ast_text = ast.pretty() if hasattr(ast, "pretty") else str(ast)
     print(ast_text)
 
     # -----------------------------------------------------
-    # 11. Guardar AST em ficheiro, se pedido
+    # 11. Imprimir TAC original
+    # -----------------------------------------------------
+    print()
+    print("Código intermédio TAC original:")
+    print("----------------------------------------")
+
+    tac_text = tac_program.pretty()
+    print(tac_text)
+
+    # -----------------------------------------------------
+    # 12. Imprimir TAC otimizado
+    # -----------------------------------------------------
+    print()
+    print("Código intermédio TAC otimizado:")
+    print("----------------------------------------")
+
+    optimized_tac_text = optimized_tac_program.pretty()
+    print(optimized_tac_text)
+    
+    
+    # -----------------------------------------------------
+    # 13. Guardar AST em ficheiro, se pedido
     # -----------------------------------------------------
     if output_ast_path is not None:
         try:
             save_text_file(output_ast_path, ast_text)
+            print()
             print(f"AST guardada em: {output_ast_path}")
         except Exception as e:
             print(f"Erro ao guardar AST em ficheiro: {e}")
+            return 1
+
+    # -----------------------------------------------------
+    # 14. Guardar TAC em ficheiro, se pedido
+    # -----------------------------------------------------
+    if output_tac_path is not None:
+        try:
+            save_text_file(
+                output_tac_path,
+                "Código intermédio TAC original:\n"
+                "----------------------------------------\n"
+                + tac_text
+                + "\n\nCódigo intermédio TAC otimizado:\n"
+                "----------------------------------------\n"
+                + optimized_tac_text
+            )
+            print(f"TAC original e otimizado guardados em: {output_tac_path}")
+        except Exception as e:
+            print(f"Erro ao guardar TAC em ficheiro: {e}")
             return 1
 
     return 0

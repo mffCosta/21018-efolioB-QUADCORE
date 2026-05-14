@@ -1,0 +1,15 @@
+// =====================================================
+// teste_erros_semanticos.mocp
+// Teste de erros semânticos
+// =====================================================
+
+vazio principal(vazio) {
+    inteiro x;
+    inteiro v[5];
+
+    // variável não declarada
+    x = y + 1;
+
+    // incompatibilidade de tipos
+    x = v;
+}
