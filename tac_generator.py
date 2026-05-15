@@ -2,7 +2,7 @@
 tac_generator.py — Geração de código intermédio TAC para MOCP.
 UC 21018 — Compilação, Universidade Aberta, 2025/2026
 Grupo: QUADCORE
-Autores: Maria Costa (2304361) | João Rodrigues (2203474) | Nuno Rolo ([Nº A PREENCHER]) | Fábio Oliveira ([Nº A PREENCHER])
+Autores: Maria Costa (2304361) | João Rodrigues (2203474) | Nuno Rolo (1900405) | Flávio Oliveira (1900860)
 
 Gera Three Address Code (TAC) a partir da AST da linguagem MOCP.
 """

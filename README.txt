@@ -7,8 +7,8 @@ Universidade Aberta - 2025/2026
 Grupo QUADCORE (4 membros):
   - Maria Costa (2304361)
   - Joao Rodrigues (2203474)
-  - Nuno Rolo ([Nº A PREENCHER])
-  - Fabio Oliveira ([Nº A PREENCHER])
+  - Nuno Rolo (1900405)
+  - Flávio Oliveira (1900860)
 
 ------------------------------------------------------------------------
 1. OBJETIVO

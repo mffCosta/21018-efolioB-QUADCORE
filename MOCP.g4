@@ -1,7 +1,7 @@
 /**
  * MOCP.g4 — Gramática ANTLR4 para a linguagem MOCP (My Own C in Português)
  * UC 21018 — Compilação, Universidade Aberta, 2025/2026
- * Autores: Maria Costa (2304361) | João Rodrigues (2203474) | Nuno Rolo ([Nº A PREENCHER]) | Fábio Oliveira ([Nº A PREENCHER])
+ * Autores: Maria Costa (2304361) | João Rodrigues (2203474) | Nuno Rolo (1900405) | Flávio Oliveira (1900860)
  * Grupo: QUADCORE
  */
 
