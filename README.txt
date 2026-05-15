@@ -1,185 +1,135 @@
-===============================================================
-E-FÓLIO B — COMPILAÇÃO (UC 21018)
-Licenciatura em Engenharia Informática — Universidade Aberta
-Ano letivo 2025/2026
-Grupo QUADCORE
-Estudantes:
-- Maria Costa (2304361)
-- João Rodrigues (2203474)
-- Nuno Rolo (1900405)
-- Flávio Oliveira (1900860)
-===============================================================
+========================================================================
+E-FOLIO B - COMPILACAO (UC 21018)
+Licenciatura em Engenharia Informatica
+Universidade Aberta - 2025/2026
+========================================================================
 
+Grupo QUADCORE (4 membros):
+  - Maria Costa (2304361)
+  - Joao Rodrigues (2203474)
+  - Nuno Rolo (1900405)
+  - Flávio Oliveira (1900860)
+
+------------------------------------------------------------------------
 1. OBJETIVO
----------------------------------------------------------------
-Este trabalho implementa, com recurso ao ANTLR4 e Python, um
-processador completo para a linguagem MOCP (My Own C in Português).
+------------------------------------------------------------------------
+Processador para a linguagem MOCP (My Own C in Portugues), desenvolvido
+em Python com ANTLR4. O programa le um ficheiro fonte MOCP e executa o
+pipeline completo de compilacao:
+  - analise lexica;
+  - analise sintatica;
+  - construcao da Arvore de Sintaxe Abstrata (AST);
+  - analise semantica;
+  - geracao de codigo intermedio TAC (Three Address Code);
+  - OTIMIZACAO do codigo intermedio TAC.
+Os erros detetados em qualquer fase sao mostrados no ecra.
 
-A solução realiza:
-- análise léxica;
-- análise sintática;
-- construção de uma árvore sintática abstrata (AST);
-- validação semântica;
-- geração de código intermédio de três endereços (TAC);
-- otimização do código intermédio;
-- apresentação de erros no ecrã.
+------------------------------------------------------------------------
+2. CONTEUDO DO PROJETO
+------------------------------------------------------------------------
+Gramatica e codigo fonte:
+  MOCP.g4            - gramatica ANTLR4 da linguagem MOCP
+  main.py            - programa principal (orquestra o pipeline)
+  ast_nodes.py       - definicao dos nos da AST
+  ast_builder.py     - construcao da AST a partir da parse tree
+  semantic.py        - analise semantica (inclui a tabela de simbolos)
+  tac.py             - representacao do codigo intermedio TAC
+  tac_generator.py   - geracao de TAC a partir da AST
+  optimizer.py       - otimizacao do codigo intermedio TAC
+  error_handler.py   - tratamento de erros lexicos e sintaticos
+  run_tests.py       - execucao automatica da bateria de testes
 
-2. CONTEÚDO DO PROJETO
----------------------------------------------------------------
-Ficheiros principais:
-- MOCP.g4                  Gramática ANTLR da linguagem MOCP
-- main.py                  Programa principal e pipeline de compilação
-- ast_nodes.py             Definição dos nós da AST
-- ast_builder.py           Visitor para construir a AST
-- error_handler.py         Deteção de palavras-chave C proibidas
-- semantic.py              Validação semântica
-- tac_generator.py         Geração de código TAC (Three Address Code)
-- optimizer.py             Otimização do código intermédio TAC
+Ficheiros gerados pelo ANTLR (a partir de MOCP.g4):
+  MOCPLexer.py, MOCPParser.py, MOCPVisitor.py, MOCPListener.py
+  MOCP.tokens, MOCPLexer.tokens, MOCP.interp, MOCPLexer.interp
 
-Ficheiros de teste:
-- exemplo_correto.mocp
-- exemplo_erros.mocp
-- teste_ciclos_vetores.mocp
-- teste_erros_variados.mocp
+Programas de teste (.mocp):
+  exemplo_correto.mocp        - programa valido (prototipos, recursao,
+                                vetores, ciclos, I/O, casting)
+  exemplo_erros.mocp          - programa com erros variados
+  melhorias_efolioA.mocp      - casos das melhorias ao E-folio A
+  teste_global.mocp           - teste integrado da linguagem
+  teste_ciclos_vetores.mocp   - ciclos, vetores e funcoes multiplas
+  teste_erros_lexicos.mocp    - erros lexicos
+  teste_erros_semanticos.mocp - erros semanticos
+  teste_erros_variados.mocp   - varios tipos de erro em simultaneo
+  spec_fatorial.mocp          - exemplo canonico: Fatorial Recursivo
+  spec_media.mocp             - exemplo canonico: Media de um vetor
+  teste_cobertura.mocp        - cobre construcoes nao cobertas pelos restantes
 
-Ficheiros gerados pelo ANTLR (incluídos no projeto):
-- MOCPLexer.py
-- MOCPParser.py
-- MOCPVisitor.py
-- MOCPListener.py
-- ficheiros auxiliares *.tokens e *.interp
-
+------------------------------------------------------------------------
 3. REQUISITOS
----------------------------------------------------------------
-Software necessário:
-- Python 3.10 ou superior
-- Java 11 ou superior
-- ANTLR 4.13.2 (ou versão compatível)
+------------------------------------------------------------------------
+  - Python 3.10 ou superior
+  - Runtime ANTLR para Python:
+        pip install antlr4-python3-runtime==4.13.2
+  - Java 11 ou superior - APENAS se quiser regenerar o parser a partir
+    da gramatica (nao e necessario para executar o projeto).
 
-Biblioteca Python necessária:
-- antlr4-python3-runtime==4.13.2
+------------------------------------------------------------------------
+4. REGENERAR O PARSER ANTLR (opcional)
+------------------------------------------------------------------------
+Os ficheiros gerados ja estao incluidos. Para os regenerar:
 
-Instalação do runtime:
-    pip install antlr4-python3-runtime==4.13.2
+  java -jar antlr-4.13.2-complete.jar -Dlanguage=Python3 -visitor MOCP.g4
 
-4. GERAÇÃO DOS FICHEIROS DO ANTLR
----------------------------------------------------------------
-Se os ficheiros MOCPLexer.py, MOCPParser.py, MOCPVisitor.py e
-MOCPListener.py já estiverem incluídos, este passo não é obrigatório.
+------------------------------------------------------------------------
+5. EXECUCAO
+------------------------------------------------------------------------
+  python main.py <ficheiro.mocp> [saida_ast.txt] [saida_tac.txt]
 
-Para regenerar a partir da gramática, executar na pasta do projeto:
+O primeiro argumento (ficheiro fonte) e obrigatorio. Os dois argumentos
+seguintes sao opcionais e indicam ficheiros onde guardar a AST e o TAC.
 
-    java -jar antlr-4.13.2-complete.jar -Dlanguage=Python3 -visitor MOCP.g4
+Exemplos:
+  python main.py spec_fatorial.mocp
+  python main.py spec_media.mocp ast.txt tac.txt
+  python main.py teste_erros_semanticos.mocp
 
-5. EXECUÇÃO
----------------------------------------------------------------
-Para executar o compilador sobre um ficheiro MOCP:
+------------------------------------------------------------------------
+6. FUNCIONAMENTO (7 fases do pipeline)
+------------------------------------------------------------------------
+  1. Leitura do ficheiro fonte.
+  2. Analise lexica - tokenizacao com ANTLR e detecao de tokens C
+     proibidos (palavras-chave C, operadores nao suportados, caracteres
+     invalidos, strings nao terminadas).
+  3. Analise sintatica - verificacao da estrutura segundo a gramatica.
+  4. Construcao da AST.
+  5. Analise semantica - tabela de simbolos, declaracao de variaveis e
+     funcoes, verificacao de tipos, numero de argumentos, existencia de
+     'principal', funcoes com 'retornar'.
+  6. Geracao de codigo intermedio TAC.
+  7. Otimizacao do codigo intermedio TAC.
 
-    python main.py <ficheiro_entrada.mocp>
+------------------------------------------------------------------------
+7. SAIDA ESPERADA
+------------------------------------------------------------------------
+Programa valido:
+  - mensagem "Analise concluida com sucesso";
+  - impressao da AST;
+  - seccao "Codigo intermedio TAC original";
+  - seccao "Codigo intermedio TAC otimizado".
 
-Exemplos básicos:
+Programa com erros:
+  - mensagem "Foram encontrados erros:" seguida das linhas de erro,
+    cada uma classificada como [LEXICO], [SINTATICO] ou [SEMANTICO].
 
-    python main.py exemplo_correto.mocp
-    python main.py exemplo_erros.mocp
-    python main.py teste_ciclos_vetores.mocp
-    python main.py teste_erros_variados.mocp
-    python main.py teste_global.mocp
+------------------------------------------------------------------------
+8. TESTES AUTOMATICOS
+------------------------------------------------------------------------
+  python run_tests.py
 
-Guardar AST e TAC em ficheiros:
+Executa toda a bateria de programas .mocp e mostra o resultado de cada um.
 
-    python main.py exemplo_correto.mocp ast.txt
-    python main.py exemplo_correto.mocp ast.txt codigo.tac
-
-O primeiro argumento é obrigatório (ficheiro MOCP).
-O segundo argumento (opcional) define onde guardar a AST.
-O terceiro argumento (opcional) define onde guardar o TAC (original e otimizado).
-
-6. FUNCIONAMENTO
----------------------------------------------------------------
-O programa segue um pipeline de compilação com 10 etapas:
-
-1) Leitura do ficheiro
-   - o ficheiro MOCP é lido com encoding UTF-8.
-
-2) Análise léxica
-   - o lexer converte o texto de entrada em tokens;
-   - comentários e espaços são ignorados;
-   - símbolos inválidos são assinalados.
-
-3) Deteção de tokens C proibidos
-   - são identificadas palavras-chave da linguagem C original
-     (por exemplo int, double, if, while, return, main);
-   - são identificados operadores não suportados em MOCP
-     (por exemplo ++, --, +=, -=, *=, /=).
-
-4) Análise sintática
-   - o parser verifica se a estrutura do programa respeita a
-     gramática MOCP.
-
-5) Construção da AST
-   - a parse tree do ANTLR é convertida numa AST mais simples e
-     abstrata.
-
-6) Validação semântica
-   - deteção de variáveis não declaradas;
-   - validação de chamadas de função;
-   - verificação de vetores, retornos e tipos.
-
-7) Geração de TAC (Three Address Code)
-   - a AST é convertida num código intermédio de três endereços;
-   - cada instrução tem no máximo 3 operandos;
-   - permite análise e otimização independente da linguagem alvo.
-
-8) Otimização de TAC
-   - redução de código redundante;
-   - eliminação de operações desnecessárias;
-   - simplificação e melhoria da eficiência do código intermédio.
-
-9) Impressão da AST
-   - a AST é apresentada num formato legível no terminal.
-
-10) Impressão do TAC
-    - tanto o TAC original como o TAC otimizado são apresentados
-      no terminal e opcionalmente guardados em ficheiro.
-
-7. SAÍDA ESPERADA
----------------------------------------------------------------
-Se o ficheiro estiver correto, a saída inclui:
-
-    Análise concluída com sucesso.
-    
-    AST gerada:
-    ----------------------------------------
-    ProgramNode
-      ...
-    
-    Código intermédio TAC original:
-    ----------------------------------------
-    ...
-    
-    Código intermédio TAC otimizado:
-    ----------------------------------------
-    ...
-    
-    AST guardada em: ast.txt
-    TAC original e otimizado guardados em: codigo.tac
-
-Se o ficheiro contiver erros, a compilação é interrompida e mensagens
-erro são apresentadas:
-
-    Foram encontrados erros:
-    [LÉXICO] linha X, coluna Y: ...
-    [SINTÁTICO] linha X, coluna Y: ...
-    [SEMÂNTICO] ...
-    [TAC] ...
-
-8. OBSERVAÇÕES
----------------------------------------------------------------
-- A linguagem MOCP usa palavras-chave em português.
-- O uso direto de palavras-chave da linguagem C é tratado como erro.
-- As funções sem parâmetros devem ser escritas com (vazio).
-- Todos os blocos de controlo usam chavetas.
-
-===============================================================
-FIM
-===============================================================
+------------------------------------------------------------------------
+9. OBSERVACOES SOBRE A LINGUAGEM MOCP
+------------------------------------------------------------------------
+  - As palavras-chave sao em portugues (inteiro, real, vazio, se, senao,
+    enquanto, para, retornar, etc.).
+  - As palavras-chave da linguagem C (int, if, return, ...) sao tratadas
+    como ERRO.
+  - As funcoes sem parametros usam '(vazio)'.
+  - Os blocos sao sempre delimitados por chavetas { }.
+  - Os prototipos das funcoes devem aparecer antes das definicoes de
+    funcoes e das variaveis globais.
+========================================================================

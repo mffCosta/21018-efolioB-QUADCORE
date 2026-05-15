@@ -2,6 +2,7 @@
 optimizer.py — Otimização de código intermédio TAC para MOCP.
 UC 21018 — Compilação, Universidade Aberta, 2025/2026
 Grupo: QUADCORE
+Autores: Maria Costa (2304361) | João Rodrigues (2203474) | Nuno Rolo (1900405) | Flávio Oliveira (1900860)
 
 Otimizações implementadas:
   1. Constant folding
@@ -22,7 +23,6 @@ from tac import (
     TACInstruction,
     is_numeric_literal,
     is_real_literal,
-    is_temporary,
     is_variable_like,
     is_binary_operator,
 )
@@ -67,7 +67,7 @@ class TACOptimizer:
         self,
         program: TACProgram
     ) -> TACProgram:
-        new_program = TACProgram()
+        new_program = TACProgram(temporaries=set(program.temporaries))
 
         for instr in program.instructions:
             instr = deepcopy(instr)
@@ -181,7 +181,7 @@ class TACOptimizer:
     # =====================================================
 
     def constant_and_copy_propagation(self, program: TACProgram) -> TACProgram:
-        new_program = TACProgram()
+        new_program = TACProgram(temporaries=set(program.temporaries))
 
         constants: Dict[str, str] = {}
         copies: Dict[str, str] = {}
@@ -296,6 +296,7 @@ class TACOptimizer:
     def dead_code_elimination(self, program: TACProgram) -> TACProgram:
         live: Set[str] = set()
         kept_reversed: List[TACInstruction] = []
+        temporaries = program.temporaries
 
         for instr in reversed(program.instructions):
             defined = instr.defines()
@@ -315,7 +316,11 @@ class TACOptimizer:
                 live.update(used)
                 continue
 
-            if defined in live or not is_temporary(defined):
+            # Só se eliminam temporários gerados pelo compilador (registados
+            # em program.temporaries) que não voltam a ser usados. Variáveis
+            # do utilizador são sempre preservadas, ainda que tenham um nome
+            # com o padrão de um temporário.
+            if defined in live or defined not in temporaries:
                 kept_reversed.append(instr)
                 live.discard(defined)
                 live.update(used)
@@ -323,14 +328,14 @@ class TACOptimizer:
                 self.changed = True
 
         kept_reversed.reverse()
-        return TACProgram(kept_reversed)
+        return TACProgram(kept_reversed, temporaries=set(temporaries))
 
     # =====================================================
     # 4. Remoção de NOPs
     # =====================================================
 
     def remove_nops(self, program: TACProgram) -> TACProgram:
-        new_program = TACProgram()
+        new_program = TACProgram(temporaries=set(program.temporaries))
 
         for instr in program.instructions:
             if instr.op == "nop":
@@ -389,11 +394,15 @@ class TACOptimizer:
             if op == "/":
                 if b == 0:
                     return None
-                return str(a // b)
+                # Divisao inteira com truncamento para zero (regras do C),
+                # em vez do floor que o operador // do Python aplica.
+                return str(self._c_int_div(a, b))
             if op == "%":
                 if b == 0:
                     return None
-                return str(a % b)
+                # Resto coerente com a divisao truncada do C:
+                #   a % b == a - (a / b) * b
+                return str(a - self._c_int_div(a, b) * b)
 
             if op == "<":
                 return "1" if a < b else "0"
@@ -412,6 +421,17 @@ class TACOptimizer:
 
         except Exception:
             return None
+
+    def _c_int_div(self, a: int, b: int) -> int:
+        """
+        Divisao inteira com truncamento para zero, como em C.
+        Difere do operador // do Python, que arredonda para baixo
+        (ex.: -7 / 2 == -3 em C, mas -7 // 2 == -4 em Python).
+        """
+        quociente = abs(a) // abs(b)
+        if (a < 0) != (b < 0):
+            quociente = -quociente
+        return quociente
 
     def _eval_unary_minus(self, value: str) -> str:
         if is_real_literal(value):

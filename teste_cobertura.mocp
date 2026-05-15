@@ -1,0 +1,62 @@
+/*
+ * teste_cobertura.mocp — exercita construcoes nao cobertas por outros testes
+ * UC 21018 — Compilação, Universidade Aberta, 2025/2026
+ * Grupo QUADCORE: Maria Costa (2304361) | João Rodrigues (2203474) | Nuno Rolo (1900405) | Flávio Oliveira (1900860)
+ * Testa: globais com init, init dependente, array literal/expr, lerc/lers,
+ *        / % menos unario, cast (inteiro), || ! &&, escreverc/v/s, retornar sem valor
+ */
+
+inteiro dobro(inteiro x);   /* prototipo: antes de qualquer variavel */
+
+inteiro g = 7;              /* declaracao global com inicializacao */
+real gr = 1.5;
+
+inteiro dobro(inteiro x) {
+    retornar x * 2;
+}
+
+vazio principal(vazio) {
+    /* declaracao com inicializacao e dependencia entre itens */
+    inteiro m = 1, n = 2 * m, soma = m + n;
+
+    /* declaracao real com inicializacao */
+    real x = 3.14, y = x / 2;
+
+    /* array literal init e array com expr init */
+    inteiro v[] = {10, 20, 30};
+    inteiro s[] = lers();
+
+    /* leitura de caracter */
+    inteiro c = lerc();
+
+    /* operadores / e % e menos unario */
+    inteiro d = 17 / 5;
+    inteiro r = 17 % 5;
+    inteiro neg = -m;
+
+    /* cast (inteiro) */
+    inteiro ci = (inteiro) x;
+
+    /* operadores logicos || e ! */
+    se (m > 0 || n < 0) {
+        escrever(m);
+    }
+    se (!(m > 5)) {
+        escrever(n);
+    }
+    se (m > 0 && n > 0 || soma > 100) {
+        escrever(soma);
+    }
+
+    /* escreverc, escreverv */
+    escreverc(c);
+    escreverv(v);
+    escrevers(s);
+
+    /* retornar sem valor numa funcao vazio */
+    se (g > 0) {
+        retornar;
+    }
+
+    escrever(dobro(g));
+}
