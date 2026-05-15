@@ -2,16 +2,26 @@
 run_tests.py — Execução automática dos testes MOCP.
 UC 21018 — Compilação, Universidade Aberta, 2025/2026
 Grupo: QUADCORE
+Autores: Maria Costa (2304361) | João Rodrigues (2203474) | Nuno Rolo ([Nº A PREENCHER]) | Fábio Oliveira ([Nº A PREENCHER])
 """
 
+import os
 import subprocess
 from pathlib import Path
 
 
 TEST_FILES = [
+    "exemplo_correto.mocp",
     "teste_global.mocp",
+    "teste_ciclos_vetores.mocp",
+    "teste_cobertura.mocp",
+    "spec_fatorial.mocp",
+    "spec_media.mocp",
     "teste_erros_lexicos.mocp",
     "teste_erros_semanticos.mocp",
+    "teste_erros_variados.mocp",
+    "exemplo_erros.mocp",
+    "melhorias_efolioA.mocp",
 ]
 
 
@@ -31,7 +41,9 @@ def run_test(test_file: str) -> None:
         ["python", "main.py", str(path)],
         capture_output=True,
         text=True,
-        encoding="utf-8"
+        encoding="utf-8",
+        errors="replace",
+        env={**os.environ, "PYTHONIOENCODING": "utf-8"},
     )
 
     print(result.stdout)

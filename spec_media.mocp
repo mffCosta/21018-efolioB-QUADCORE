@@ -1,0 +1,26 @@
+/*
+ * spec_media.mocp — Exemplo canónico do enunciado: Média de um vetor
+ * UC 21018 — Compilação, Universidade Aberta, 2025/2026
+ * Grupo QUADCORE: Maria Costa (2304361) | João Rodrigues (2203474) | Nuno Rolo ([Nº A PREENCHER]) | Fábio Oliveira ([Nº A PREENCHER])
+ * Testa: vetor como parâmetro, ciclo para, acesso indexado, divisão real, retornar
+ */
+real media(real[], inteiro);
+vazio principal(vazio);
+
+real media(real v[], inteiro tamanho) {
+    inteiro i;
+    real soma = 0;
+    para (i = 0; i < tamanho; i = i + 1) {
+        soma = soma + v[i];
+    }
+    retornar soma / tamanho;
+}
+
+vazio principal(vazio) {
+    inteiro i, n;
+    real v[100];
+    escrevers("Introduza tamanho e valores: ");
+    n = ler();
+    para (i = 0; i < n; i = i + 1) { v[i] = ler(); }
+    escrever(media(v, n));
+}

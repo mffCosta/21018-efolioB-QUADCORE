@@ -1,8 +1,8 @@
 """
 error_handler.py — Tratamento de erros léxicos e sintáticos para MOCP.
 UC 21018 — Compilação, Universidade Aberta, 2025/2026
-Autores: João Rodrigues (2203474) | Maria Costa (2304361)
-Grupo: DUALCORE
+Autores: Maria Costa (2304361) | João Rodrigues (2203474) | Nuno Rolo ([Nº A PREENCHER]) | Fábio Oliveira ([Nº A PREENCHER])
+Grupo: QUADCORE
 
 Implementa verificação de palavras-chave C proibidas e operadores não suportados.
 Produz mensagens de erro claras em português.

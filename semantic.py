@@ -1,7 +1,7 @@
 """
 semantic.py — Análise semântica para MOCP.
 UC 21018 — Compilação, Universidade Aberta, 2025/2026
-Autores: João Rodrigues (2203474) | Maria Costa (2304361)
+Autores: Maria Costa (2304361) | João Rodrigues (2203474) | Nuno Rolo ([Nº A PREENCHER]) | Fábio Oliveira ([Nº A PREENCHER])
 Grupo: QUADCORE
 
 Responsabilidades:
@@ -344,6 +344,17 @@ class SemanticAnalyzer:
                 )
                 if then_has and else_has:
                     return True
+
+            # Um 'retornar' dentro do corpo de um ciclo conta como retorno
+            # existente. O ciclo pode nao executar, mas esta verificacao
+            # destina-se apenas a confirmar que a funcao tem pelo menos um
+            # 'retornar', evitando falsos positivos.
+            if isinstance(stmt, WhileStmtNode) and self._block_has_return(stmt.body):
+                return True
+
+            if isinstance(stmt, ForStmtNode) and stmt.body is not None \
+                    and self._block_has_return(stmt.body):
+                return True
 
         return False
 

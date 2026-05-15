@@ -2,6 +2,7 @@
 tac_generator.py — Geração de código intermédio TAC para MOCP.
 UC 21018 — Compilação, Universidade Aberta, 2025/2026
 Grupo: QUADCORE
+Autores: Maria Costa (2304361) | João Rodrigues (2203474) | Nuno Rolo ([Nº A PREENCHER]) | Fábio Oliveira ([Nº A PREENCHER])
 
 Gera Three Address Code (TAC) a partir da AST da linguagem MOCP.
 """
@@ -86,6 +87,20 @@ class TACGenerator:
 
         self.input_functions = {"ler", "lerc", "lers"}
         self.output_functions = {"escrever", "escreverc", "escrevers", "escreverv"}
+
+    # =====================================================
+    # Apoio à geração de temporários
+    # =====================================================
+
+    def _new_temp(self) -> str:
+        """
+        Cria um temporário novo e regista-o no conjunto de temporários do
+        programa TAC. Esse registo permite à otimização distinguir, sem
+        ambiguidade, temporários de variáveis do utilizador.
+        """
+        temp = self.names.new_temp()
+        self.program.temporaries.add(temp)
+        return temp
 
     # =====================================================
     # API principal
@@ -309,29 +324,40 @@ class TACGenerator:
         if isinstance(cond, RelationalCondNode):
             left = self.visit_expr(cond.left)
             right = self.visit_expr(cond.right)
-            temp = self.names.new_temp()
+            temp = self._new_temp()
             self.program.add(tac_binary(temp, left, cond.operator, right))
             return temp
 
         if isinstance(cond, NotCondNode):
             value = self.visit_cond_expr(cond.operand)
-            temp = self.names.new_temp()
+            temp = self._new_temp()
             self.program.add(tac_binary(temp, value, "==", "0"))
             return temp
 
         if isinstance(cond, BinaryLogicalCondNode):
             left = self.visit_cond_expr(cond.left)
             right = self.visit_cond_expr(cond.right)
-            temp = self.names.new_temp()
+
+            # Normaliza ambos os operandos para 0/1 antes de os combinar.
+            # Sem esta normalizacao, o '||' implementado como soma podia
+            # anular-se (ex.: 1 || -1 -> 1 + (-1) = 0, falsamente falso) e o
+            # '&&' como produto podia exceder 1. Com os operandos em {0,1}:
+            #   &&  ->  produto em {0,1}
+            #   ||  ->  soma em {0,1,2} (tratada como verdadeira se != 0)
+            left_bool = self._new_temp()
+            self.program.add(tac_binary(left_bool, left, "!=", "0"))
+
+            right_bool = self._new_temp()
+            self.program.add(tac_binary(right_bool, right, "!=", "0"))
+
+            temp = self._new_temp()
 
             if cond.operator == "&&":
-                self.program.add(tac_binary(temp, left, "*", right))
+                self.program.add(tac_binary(temp, left_bool, "*", right_bool))
                 return temp
 
             if cond.operator == "||":
-                sum_temp = self.names.new_temp()
-                self.program.add(tac_binary(sum_temp, left, "+", right))
-                self.program.add(tac_binary(temp, sum_temp, "!=", "0"))
+                self.program.add(tac_binary(temp, left_bool, "+", right_bool))
                 return temp
 
             raise TACGenerationError(
@@ -352,7 +378,7 @@ class TACGenerator:
 
         if isinstance(expr, ArrayAccessNode):
             index = self.visit_expr(expr.index)
-            temp = self.names.new_temp()
+            temp = self._new_temp()
             self.program.add(tac_array_load(temp, expr.name, index))
             return temp
 
@@ -362,19 +388,19 @@ class TACGenerator:
         if isinstance(expr, BinaryExprNode):
             left = self.visit_expr(expr.left)
             right = self.visit_expr(expr.right)
-            temp = self.names.new_temp()
+            temp = self._new_temp()
             self.program.add(tac_binary(temp, left, expr.operator, right))
             return temp
 
         if isinstance(expr, UnaryExprNode):
             value = self.visit_expr(expr.operand)
-            temp = self.names.new_temp()
+            temp = self._new_temp()
             self.program.add(tac_unary_minus(temp, value))
             return temp
 
         if isinstance(expr, CastExprNode):
             value = self.visit_expr(expr.expr)
-            temp = self.names.new_temp()
+            temp = self._new_temp()
             self.program.add(tac_cast(temp, value, expr.target_type))
             return temp
 
@@ -393,17 +419,17 @@ class TACGenerator:
 
     def visit_function_call(self, call: FunctionCallNode) -> str:
         if call.name == "ler":
-            temp = self.names.new_temp()
+            temp = self._new_temp()
             self.program.add(tac_read(temp))
             return temp
 
         if call.name == "lerc":
-            temp = self.names.new_temp()
+            temp = self._new_temp()
             self.program.add(tac_readc(temp))
             return temp
 
         if call.name == "lers":
-            temp = self.names.new_temp()
+            temp = self._new_temp()
             self.program.add(tac_reads(temp))
             return temp
 
@@ -429,12 +455,10 @@ class TACGenerator:
             self.program.add(tac_call(call.name, len(args), None))
             return ""
 
-        temp = self.names.new_temp()
+        temp = self._new_temp()
         self.program.add(tac_call(call.name, len(args), temp))
         return temp
-    
-        return temp
-    
+
     # =====================================================
     # Utilitários
     # =====================================================

@@ -2,6 +2,7 @@
 tac.py — Representação de Código Intermédio TAC para MOCP.
 UC 21018 — Compilação, Universidade Aberta, 2025/2026
 Grupo: QUADCORE
+Autores: Maria Costa (2304361) | João Rodrigues (2203474) | Nuno Rolo ([Nº A PREENCHER]) | Fábio Oliveira ([Nº A PREENCHER])
 
 Este módulo define uma representação estruturada de Three Address Code (TAC),
 preparada para:
@@ -250,9 +251,16 @@ class TACInstruction:
 class TACProgram:
     """
     Representa o conjunto completo de instruções TAC de um programa.
+
+    O campo 'temporaries' guarda o conjunto de nomes de temporários
+    efetivamente gerados pelo compilador. É usado pela otimização
+    (dead code elimination) para distinguir, sem ambiguidade, um
+    temporário de uma variável do utilizador que, por acaso, tenha um
+    nome com o mesmo padrão (por exemplo, uma variável chamada 't1').
     """
 
     instructions: List[TACInstruction] = field(default_factory=list)
+    temporaries: Set[str] = field(default_factory=set)
 
     def add(self, instruction: TACInstruction) -> None:
         self.instructions.append(instruction)
@@ -295,7 +303,8 @@ class TACProgram:
                     comment=instr.comment,
                 )
                 for instr in self.instructions
-            ]
+            ],
+            temporaries=set(self.temporaries),
         )
 
 

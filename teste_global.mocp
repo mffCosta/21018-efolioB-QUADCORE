@@ -1,7 +1,7 @@
 // =====================================================
 // teste_global.mocp
 // Teste integrado da linguagem MOCP — E-fólio B
-// Grupo QUADCORE
+// Grupo QUADCORE: Maria Costa (2304361) | João Rodrigues (2203474) | Nuno Rolo ([Nº A PREENCHER]) | Fábio Oliveira ([Nº A PREENCHER])
 // =====================================================
 
 inteiro fatorial(inteiro n);

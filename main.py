@@ -1,7 +1,7 @@
 """
 main.py — Programa principal do compilador MOCP.
 UC 21018 — Compilação, Universidade Aberta, 2025/2026
-Autores: João Rodrigues (2203474) | Maria Costa (2304361)
+Autores: Maria Costa (2304361) | João Rodrigues (2203474) | Nuno Rolo ([Nº A PREENCHER]) | Fábio Oliveira ([Nº A PREENCHER])
 Grupo: QUADCORE
 
 Pipeline de compilação:
@@ -122,6 +122,12 @@ def convert_error_message(err_msg: str) -> CompilationError:
 # =========================================================
 
 def main() -> int:
+    # Garantir saída em UTF-8 (evita UnicodeEncodeError em consolas Windows).
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
     # -----------------------------------------------------
     # 1. Validar argumentos
     # -----------------------------------------------------
@@ -241,7 +247,7 @@ def main() -> int:
         return 1
     
     # -----------------------------------------------------
-    # 10. Imprimir AST
+    # 11. Imprimir AST
     # -----------------------------------------------------
     print("Análise concluída com sucesso.")
     print()
@@ -252,7 +258,7 @@ def main() -> int:
     print(ast_text)
 
     # -----------------------------------------------------
-    # 11. Imprimir TAC original
+    # 12. Imprimir TAC original
     # -----------------------------------------------------
     print()
     print("Código intermédio TAC original:")
@@ -262,7 +268,7 @@ def main() -> int:
     print(tac_text)
 
     # -----------------------------------------------------
-    # 12. Imprimir TAC otimizado
+    # 13. Imprimir TAC otimizado
     # -----------------------------------------------------
     print()
     print("Código intermédio TAC otimizado:")
@@ -273,7 +279,7 @@ def main() -> int:
     
     
     # -----------------------------------------------------
-    # 13. Guardar AST em ficheiro, se pedido
+    # 14. Guardar AST em ficheiro, se pedido
     # -----------------------------------------------------
     if output_ast_path is not None:
         try:
@@ -285,7 +291,7 @@ def main() -> int:
             return 1
 
     # -----------------------------------------------------
-    # 14. Guardar TAC em ficheiro, se pedido
+    # 15. Guardar TAC em ficheiro, se pedido
     # -----------------------------------------------------
     if output_tac_path is not None:
         try:
