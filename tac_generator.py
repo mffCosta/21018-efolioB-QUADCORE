@@ -170,6 +170,7 @@ class TACGenerator:
         for item in node.items:
             if isinstance(item, VarSimpleDeclNode):
                 self.program.add(tac_declare(item.name))
+                self.program.add(tac_assign(item.name, "0"))
 
             elif isinstance(item, VarInitDeclNode):
                 self.program.add(tac_declare(item.name))
