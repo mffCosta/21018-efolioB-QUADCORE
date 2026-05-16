@@ -8,7 +8,7 @@ Grupo QUADCORE (4 membros):
   - Maria Costa (2304361)
   - Joao Rodrigues (2203474)
   - Nuno Rolo (1900405)
-  - Flávio Oliveira (1900860)
+  - Fábio Oliveira (1800960)
 
 ------------------------------------------------------------------------
 1. OBJETIVO
