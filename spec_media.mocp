@@ -1,7 +1,7 @@
 /*
  * spec_media.mocp — Exemplo canónico do enunciado: Média de um vetor
  * UC 21018 — Compilação, Universidade Aberta, 2025/2026
- * Grupo QUADCORE: Maria Costa (2304361) | João Rodrigues (2203474) | Nuno Rolo (1900405) | Flávio Oliveira (1900860)
+ * Grupo QUADCORE: Maria Costa (2304361) | João Rodrigues (2203474) | Nuno Rolo (1900405) | Fábio Oliveira (1800960)
  * Testa: vetor como parâmetro, ciclo para, acesso indexado, divisão real, retornar
  */
 real media(real[], inteiro);

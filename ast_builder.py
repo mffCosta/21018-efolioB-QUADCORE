@@ -1,7 +1,7 @@
 """
 ast_builder.py — Construção da Árvore de Sintaxe Abstrata (AST) a partir da parse tree ANTLR.
 UC 21018 — Compilação, Universidade Aberta, 2025/2026
-Autores: Maria Costa (2304361) | João Rodrigues (2203474) | Nuno Rolo (1900405) | Flávio Oliveira (1900860)
+Autores: Maria Costa (2304361) | João Rodrigues (2203474) | Nuno Rolo (1900405) | Fábio Oliveira (1800960)
 Grupo: QUADCORE
 """
 
