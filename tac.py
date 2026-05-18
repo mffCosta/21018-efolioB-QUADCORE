@@ -471,6 +471,8 @@ def tac_array_store(array_name: str, index: str, value: str) -> TACInstruction:
 
 
 def tac_array_decl(array_name: str, size: str) -> TACInstruction:
+    # Implica zero-init de todos os elementos (spec MOCP: valor por omissao = 0).
+    # Tamanho '?' significa dimensao determinada em tempo de execucao (ex.: lers()).
     return TACInstruction(op="array_decl", result=array_name, arg1=size)
 
 
