@@ -10,23 +10,11 @@ import subprocess
 from pathlib import Path
 
 
-TEST_FILES = [
-    "exemplo_correto.mocp",
-    "teste_global.mocp",
-    "teste_ciclos_vetores.mocp",
-    "teste_cobertura.mocp",
-    "spec_fatorial.mocp",
-    "spec_media.mocp",
-    "teste_erros_lexicos.mocp",
-    "teste_erros_semanticos.mocp",
-    "teste_erros_variados.mocp",
-    "exemplo_erros.mocp",
-    "melhorias_efolioA.mocp",
-]
+TESTS_DIR = Path("Testes")
 
 
-def run_test(test_file: str) -> None:
-    path = Path(test_file)
+def run_test(path: Path) -> None:
+    test_file = path.name
 
     print("=" * 70)
     print(f"TESTE: {test_file}")
@@ -60,7 +48,17 @@ def main() -> None:
     print("Execução automática dos testes MOCP")
     print()
 
-    for test_file in TEST_FILES:
+    if not TESTS_DIR.exists():
+        print(f"ERRO: pasta '{TESTS_DIR}' não encontrada.")
+        return
+
+    test_files = sorted(TESTS_DIR.glob("*.mocp"))
+
+    if not test_files:
+        print(f"ERRO: não foram encontrados ficheiros .mocp em '{TESTS_DIR}'.")
+        return
+
+    for test_file in test_files:
         run_test(test_file)
 
     print("=" * 70)

@@ -119,7 +119,19 @@ Programa com erros:
 ------------------------------------------------------------------------
   python run_tests.py
 
-Executa toda a bateria de programas .mocp e mostra o resultado de cada um.
+O script `run_tests.py` descobre automaticamente todos os ficheiros
+.mocp na pasta `Testes` (ordenados por nome) e executa cada um chamando
+`python main.py <ficheiro.mocp>`. Não é necessário editar uma lista
+de ficheiros no script — basta colocar os testes na pasta `Testes`.
+
+Exemplos:
+  - Executar a bateria completa de testes:
+      python run_tests.py
+  - Executar um único ficheiro de teste diretamente:
+      python main.py Testes/spec_fatorial.mocp
+
+Se a pasta `Testes` não existir ou não contiver ficheiros `.mocp`, o
+script avisará e terminará sem executar testes.
 
 ------------------------------------------------------------------------
 9. OBSERVACOES SOBRE A LINGUAGEM MOCP
