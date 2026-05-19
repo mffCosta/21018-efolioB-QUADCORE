@@ -82,9 +82,9 @@ O primeiro argumento (ficheiro fonte) e obrigatorio. Os dois argumentos
 seguintes sao opcionais e indicam ficheiros onde guardar a AST e o TAC.
 
 Exemplos:
-  python main.py spec_fatorial.mocp
-  python main.py spec_media.mocp ast.txt tac.txt
-  python main.py teste_erros_semanticos.mocp
+ python main.py Testes/spec_fatorial.mocp
+ python main.py Testes/spec_media.mocp ast.txt tac.txt
+ python main.py Testes/teste_erros_semanticos.mocp
 
 ------------------------------------------------------------------------
 6. FUNCIONAMENTO (7 fases do pipeline)
