@@ -46,6 +46,7 @@ from tac import (
     TACNameGenerator,
     tac_label,
     tac_goto,
+    tac_if,
     tac_if_false,
     tac_assign,
     tac_binary,
@@ -336,30 +337,11 @@ class TACGenerator:
             return temp
 
         if isinstance(cond, BinaryLogicalCondNode):
-            left = self.visit_cond_expr(cond.left)
-            right = self.visit_cond_expr(cond.right)
-
-            # Normaliza ambos os operandos para 0/1 antes de os combinar.
-            # Sem esta normalizacao, o '||' implementado como soma podia
-            # anular-se (ex.: 1 || -1 -> 1 + (-1) = 0, falsamente falso) e o
-            # '&&' como produto podia exceder 1. Com os operandos em {0,1}:
-            #   &&  ->  produto em {0,1}
-            #   ||  ->  soma em {0,1,2} (tratada como verdadeira se != 0)
-            left_bool = self._new_temp()
-            self.program.add(tac_binary(left_bool, left, "!=", "0"))
-
-            right_bool = self._new_temp()
-            self.program.add(tac_binary(right_bool, right, "!=", "0"))
-
-            temp = self._new_temp()
-
             if cond.operator == "&&":
-                self.program.add(tac_binary(temp, left_bool, "*", right_bool))
-                return temp
+                return self._visit_logical_and(cond)
 
             if cond.operator == "||":
-                self.program.add(tac_binary(temp, left_bool, "+", right_bool))
-                return temp
+                return self._visit_logical_or(cond)
 
             raise TACGenerationError(
                 f"Operador lógico desconhecido: {cond.operator}"
@@ -368,6 +350,58 @@ class TACGenerator:
         raise TACGenerationError(
             f"Condição sem tratamento TAC: {type(cond).__name__}"
         )
+
+    def _visit_logical_and(self, cond: BinaryLogicalCondNode) -> str:
+        """
+        Gera TAC com curto-circuito para 'esq && dir'.
+
+        O operando direito so e avaliado quando o esquerdo for verdadeiro,
+        evitando efeitos laterais indesejados (chamadas de funcao, acessos
+        a vetor, etc.) quando o resultado ja esta determinado pelo esquerdo.
+        O resultado e normalizado para 0/1 num temporario.
+        """
+        false_label = self.names.new_label()
+        end_label = self.names.new_label()
+        result = self._new_temp()
+
+        left = self.visit_cond_expr(cond.left)
+        self.program.add(tac_if_false(left, false_label))
+
+        right = self.visit_cond_expr(cond.right)
+        self.program.add(tac_if_false(right, false_label))
+
+        self.program.add(tac_assign(result, "1"))
+        self.program.add(tac_goto(end_label))
+        self.program.add(tac_label(false_label))
+        self.program.add(tac_assign(result, "0"))
+        self.program.add(tac_label(end_label))
+
+        return result
+
+    def _visit_logical_or(self, cond: BinaryLogicalCondNode) -> str:
+        """
+        Gera TAC com curto-circuito para 'esq || dir'.
+
+        O operando direito so e avaliado quando o esquerdo for falso. O
+        resultado e normalizado para 0/1 num temporario.
+        """
+        true_label = self.names.new_label()
+        end_label = self.names.new_label()
+        result = self._new_temp()
+
+        left = self.visit_cond_expr(cond.left)
+        self.program.add(tac_if(left, true_label))
+
+        right = self.visit_cond_expr(cond.right)
+        self.program.add(tac_if(right, true_label))
+
+        self.program.add(tac_assign(result, "0"))
+        self.program.add(tac_goto(end_label))
+        self.program.add(tac_label(true_label))
+        self.program.add(tac_assign(result, "1"))
+        self.program.add(tac_label(end_label))
+
+        return result
 
     # =====================================================
     # Expressões
