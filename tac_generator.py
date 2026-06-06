@@ -52,6 +52,8 @@ from tac import (
     tac_binary,
     tac_unary_minus,
     tac_cast,
+    tac_int_to_real,
+    tac_real_to_int,
     tac_array_load,
     tac_array_store,
     tac_array_decl,
@@ -84,9 +86,15 @@ class TACGenerator:
 
     def __init__(self):
         self.function_returns = {}
+        self.function_params = {}
         self.program = TACProgram()
         self.names = TACNameGenerator()
         self.current_function = None
+
+        # Tipos das variaveis conhecidas, usados para inserir conversoes
+        # numericas explicitas (int_to_real / real_to_int) no TAC.
+        self.var_types = {}
+        self.global_var_types = {}
 
         self.input_functions = {"ler", "lerc", "lers"}
         self.output_functions = {"escrever", "escreverc", "escrevers", "escreverv"}
@@ -112,7 +120,9 @@ class TACGenerator:
     def generate(self, ast: ProgramNode) -> TACProgram:
         self.program = TACProgram()
         self.names = TACNameGenerator()
-        
+        self.var_types = {}
+        self.global_var_types = {}
+
         self.function_returns = {
             func.name: func.return_type
             for func in ast.functions
@@ -127,7 +137,15 @@ class TACGenerator:
             "escrevers": "vazio",
             "escreverv": "vazio",
         })
-        
+
+        # Parametros das funcoes do utilizador (definicoes e prototipos), para
+        # converter argumentos para o tipo do parametro no ponto da chamada.
+        self.function_params = {
+            func.name: func.params for func in ast.functions
+        }
+        for proto in ast.prototypes:
+            self.function_params.setdefault(proto.name, proto.params)
+
         self.visit_program(ast)
 
         return self.program
@@ -140,11 +158,15 @@ class TACGenerator:
         for decl in node.global_decls:
             self.visit_var_decl(decl)
 
+        # Tipos globais ficam visiveis em todas as funcoes.
+        self.global_var_types = dict(self.var_types)
+
         for func in node.functions:
             self.visit_function(func)
 
     def visit_function(self, node: FunctionDefNode) -> None:
         self.current_function = node.name
+        self.var_types = dict(self.global_var_types)
 
         self.program.add(tac_func_begin(node.name))
 
@@ -154,6 +176,7 @@ class TACGenerator:
         # depender de suposicoes implicitas sobre onde ficam os argumentos.
         for index, param in enumerate(node.params):
             if param.name:
+                self.var_types[param.name] = self._param_type(param)
                 self.program.add(tac_declare(param.name))
                 self.program.add(tac_getparam(param.name, index))
 
@@ -175,33 +198,44 @@ class TACGenerator:
     # =====================================================
 
     def visit_var_decl(self, node: VarDeclNode) -> None:
+        var_type = node.var_type
+
         for item in node.items:
             if isinstance(item, VarSimpleDeclNode):
+                self.var_types[item.name] = var_type
                 self.program.add(tac_declare(item.name))
-                self.program.add(tac_assign(item.name, "0"))
+                default = "0.0" if var_type == "real" else "0"
+                self.program.add(tac_assign(item.name, default))
 
             elif isinstance(item, VarInitDeclNode):
+                self.var_types[item.name] = var_type
                 self.program.add(tac_declare(item.name))
                 value = self.visit_expr(item.value)
+                value = self._convert(value, self._type_of(item.value), var_type)
                 self.program.add(tac_assign(item.name, value))
 
             elif isinstance(item, VarSizedArrayDeclNode):
+                self.var_types[item.name] = f"{var_type}[]"
                 self.program.add(tac_array_decl(item.name, str(item.size)))
                 # Materializa a inicializacao por omissao a 0 (spec MOCP) no
                 # proprio TAC, em vez de a deixar implicita na declaracao.
                 self.program.add(tac_array_zero_init(item.name, str(item.size)))
 
             elif isinstance(item, VarUnsizedArrayDeclNode):
+                self.var_types[item.name] = f"{var_type}[]"
                 self.program.add(tac_array_decl(item.name, "?"))
 
             elif isinstance(item, VarArrayInitDeclNode):
+                self.var_types[item.name] = f"{var_type}[]"
                 self.program.add(tac_array_decl(item.name, str(len(item.values))))
 
                 for index, expr in enumerate(item.values):
                     value = self.visit_expr(expr)
+                    value = self._convert(value, self._type_of(expr), var_type)
                     self.program.add(tac_array_init(item.name, str(index), value))
 
             elif isinstance(item, VarArrayExprInitDeclNode):
+                self.var_types[item.name] = f"{var_type}[]"
                 self.program.add(tac_array_decl(item.name, "?"))
                 value = self.visit_expr(item.value)
                 self.program.add(tac_assign(item.name, value))
@@ -247,12 +281,15 @@ class TACGenerator:
 
     def visit_assignment(self, target, value_expr) -> None:
         value = self.visit_expr(value_expr)
+        value_type = self._type_of(value_expr)
 
         if isinstance(target, IdentifierNode):
+            value = self._convert(value, value_type, self.var_types.get(target.name))
             self.program.add(tac_assign(target.name, value))
 
         elif isinstance(target, ArrayAccessNode):
             index = self.visit_expr(target.index)
+            value = self._convert(value, value_type, self._element_type(target.name))
             self.program.add(tac_array_store(target.name, index, value))
 
         else:
@@ -320,6 +357,8 @@ class TACGenerator:
             self.program.add(tac_return())
         else:
             value = self.visit_expr(stmt.value)
+            return_type = self.function_returns.get(self.current_function)
+            value = self._convert(value, self._type_of(stmt.value), return_type)
             self.program.add(tac_return(value))
 
     def visit_expr_stmt(self, stmt: ExprStmtNode) -> None:
@@ -433,6 +472,7 @@ class TACGenerator:
         if isinstance(expr, BinaryExprNode):
             left = self.visit_expr(expr.left)
             right = self.visit_expr(expr.right)
+            left, right = self._promote_operands(expr, left, right)
             temp = self._new_temp()
             self.program.add(tac_binary(temp, left, expr.operator, right))
             return temp
@@ -489,7 +529,17 @@ class TACGenerator:
 
             return ""
 
-        args = [self.visit_expr(arg) for arg in call.args]
+        # Avalia cada argumento e converte-o para o tipo do parametro
+        # correspondente antes de o passar (conversao no ponto da chamada).
+        params = self.function_params.get(call.name)
+        args = []
+        for index, arg in enumerate(call.args):
+            place = self.visit_expr(arg)
+            if params is not None and index < len(params) and not params[index].is_array:
+                place = self._convert(
+                    place, self._type_of(arg), params[index].param_type
+                )
+            args.append(place)
 
         for arg in args:
             self.program.add(tac_param(arg))
@@ -503,6 +553,106 @@ class TACGenerator:
         temp = self._new_temp()
         self.program.add(tac_call(call.name, len(args), temp))
         return temp
+
+    # =====================================================
+    # Conversões numéricas explícitas
+    # =====================================================
+
+    def _param_type(self, param) -> str:
+        """Tipo de um parametro, com sufixo '[]' quando e vetor."""
+        return f"{param.param_type}[]" if param.is_array else param.param_type
+
+    def _element_type(self, name: str):
+        """Tipo dos elementos de um vetor declarado (sem o sufixo '[]')."""
+        base = self.var_types.get(name)
+        if base is not None and base.endswith("[]"):
+            return base[:-2]
+        return base
+
+    def _type_of(self, expr):
+        """
+        Infere o tipo estatico de uma expressao (sem emitir TAC).
+
+        Espelha a inferencia da analise semantica, mas apenas com o detalhe
+        necessario para decidir conversoes numericas. Devolve None quando o
+        tipo nao e relevante para conversao (evita coercoes erradas).
+        """
+        if isinstance(expr, IdentifierNode):
+            return self.var_types.get(expr.name)
+
+        if isinstance(expr, ArrayAccessNode):
+            return self._element_type(expr.name)
+
+        if isinstance(expr, IntLiteralNode):
+            return "inteiro"
+
+        if isinstance(expr, RealLiteralNode):
+            return "real"
+
+        if isinstance(expr, StringLiteralNode):
+            return "inteiro[]"
+
+        if isinstance(expr, CastExprNode):
+            return expr.target_type
+
+        if isinstance(expr, UnaryExprNode):
+            return self._type_of(expr.operand)
+
+        if isinstance(expr, BinaryExprNode):
+            if expr.operator == "%":
+                return "inteiro"
+            if expr.operator in {"<", "<=", ">", ">=", "==", "!="}:
+                return "inteiro"
+            left_type = self._type_of(expr.left)
+            right_type = self._type_of(expr.right)
+            if left_type == "real" or right_type == "real":
+                return "real"
+            return "inteiro"
+
+        if isinstance(expr, FunctionCallNode):
+            return self.function_returns.get(expr.name)
+
+        return None
+
+    def _convert(self, place: str, from_type, to_type) -> str:
+        """
+        Emite uma conversao numerica explicita se 'from_type' e 'to_type'
+        diferirem entre inteiro e real, devolvendo o novo local. Caso
+        contrario devolve o local original inalterado.
+        """
+        if from_type is None or to_type is None or from_type == to_type:
+            return place
+
+        if from_type == "inteiro" and to_type == "real":
+            temp = self._new_temp()
+            self.program.add(tac_int_to_real(temp, place))
+            return temp
+
+        if from_type == "real" and to_type == "inteiro":
+            temp = self._new_temp()
+            self.program.add(tac_real_to_int(temp, place))
+            return temp
+
+        return place
+
+    def _promote_operands(self, expr: BinaryExprNode, left: str, right: str):
+        """
+        Promove o operando inteiro para real numa operacao mista inteiro/real,
+        para que a operacao seja feita em virgula flutuante. O operador '%'
+        exige inteiros, pelo que nunca promove.
+        """
+        if expr.operator == "%":
+            return left, right
+
+        left_type = self._type_of(expr.left)
+        right_type = self._type_of(expr.right)
+
+        if left_type == "real" and right_type == "inteiro":
+            right = self._convert(right, "inteiro", "real")
+        elif right_type == "real" and left_type == "inteiro":
+            left = self._convert(left, "inteiro", "real")
+
+        return left, right
 
     # =====================================================
     # Utilitários

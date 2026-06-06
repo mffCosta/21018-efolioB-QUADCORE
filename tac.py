@@ -87,6 +87,12 @@ class TACInstruction:
         if self.op == "cast":
             return f"{self.result} = ({self.arg2}) {self.arg1}"
 
+        if self.op == "int_to_real":
+            return f"{self.result} = int_to_real {self.arg1}"
+
+        if self.op == "real_to_int":
+            return f"{self.result} = real_to_int {self.arg1}"
+
         if self.op == "array_load":
             return f"{self.result} = {self.arg1}[{self.arg2}]"
 
@@ -173,6 +179,8 @@ class TACInstruction:
             "<", "<=", ">", ">=", "==", "!=",
             "uminus",
             "cast",
+            "int_to_real",
+            "real_to_int",
             "array_load",
             "call",
             "read",
@@ -199,7 +207,10 @@ class TACInstruction:
             add_if_var(self.arg1)
             add_if_var(self.arg2)
 
-        elif self.op in {"assign", "uminus", "cast", "if", "ifFalse", "return", "param"}:
+        elif self.op in {
+            "assign", "uminus", "cast", "int_to_real", "real_to_int",
+            "if", "ifFalse", "return", "param",
+        }:
             add_if_var(self.arg1)
 
         elif self.op == "array_load":
@@ -469,6 +480,17 @@ def tac_unary_minus(target: str, value: str) -> TACInstruction:
 
 def tac_cast(target: str, value: str, target_type: str) -> TACInstruction:
     return TACInstruction(op="cast", result=target, arg1=value, arg2=target_type)
+
+
+def tac_int_to_real(target: str, value: str) -> TACInstruction:
+    # Conversao implicita inteiro -> real, materializada no TAC no ponto onde
+    # ocorre a coercao numerica (atribuicao, retorno, promocao em expressao).
+    return TACInstruction(op="int_to_real", result=target, arg1=value)
+
+
+def tac_real_to_int(target: str, value: str) -> TACInstruction:
+    # Conversao implicita real -> inteiro (truncatura), materializada no TAC.
+    return TACInstruction(op="real_to_int", result=target, arg1=value)
 
 
 def tac_array_load(target: str, array_name: str, index: str) -> TACInstruction:
