@@ -62,6 +62,7 @@ from tac import (
     tac_func_begin,
     tac_func_end,
     tac_declare,
+    tac_getparam,
     tac_read,
     tac_readc,
     tac_reads,
@@ -146,9 +147,14 @@ class TACGenerator:
 
         self.program.add(tac_func_begin(node.name))
 
-        for param in node.params:
+        # Rececao explicita dos parametros: cada parametro e declarado e
+        # depois lido da area de chamada com 'getparam i'. Assim o TAC fica
+        # auto-contido e a convencao de chamadas torna-se verificavel, sem
+        # depender de suposicoes implicitas sobre onde ficam os argumentos.
+        for index, param in enumerate(node.params):
             if param.name:
                 self.program.add(tac_declare(param.name))
+                self.program.add(tac_getparam(param.name, index))
 
         self.visit_block(node.body)
 

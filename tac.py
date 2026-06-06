@@ -121,6 +121,9 @@ class TACInstruction:
         if self.op == "declare":
             return f"declare {self.result}"
 
+        if self.op == "getparam":
+            return f"{self.result} = getparam {self.arg1}"
+
         if self.op == "read":
             return f"{self.result} = call ler, 0"
 
@@ -172,6 +175,7 @@ class TACInstruction:
             "read",
             "readc",
             "reads",
+            "getparam",
         }:
             return self.result
 
@@ -240,6 +244,7 @@ class TACInstruction:
             "read",
             "readc",
             "reads",
+            "getparam",
         }
 
 
@@ -507,6 +512,12 @@ def tac_func_end(name: str) -> TACInstruction:
 
 def tac_declare(name: str) -> TACInstruction:
     return TACInstruction(op="declare", result=name)
+
+
+def tac_getparam(name: str, index: int) -> TACInstruction:
+    # Rececao explicita do parametro de indice 'index' (0-based) a partir da
+    # area de chamada, materializando a convencao de chamadas no proprio TAC.
+    return TACInstruction(op="getparam", result=name, arg1=str(index))
 
 
 def tac_read(target: str) -> TACInstruction:
