@@ -55,6 +55,7 @@ from tac import (
     tac_array_load,
     tac_array_store,
     tac_array_decl,
+    tac_array_zero_init,
     tac_array_init,
     tac_param,
     tac_call,
@@ -186,6 +187,9 @@ class TACGenerator:
 
             elif isinstance(item, VarSizedArrayDeclNode):
                 self.program.add(tac_array_decl(item.name, str(item.size)))
+                # Materializa a inicializacao por omissao a 0 (spec MOCP) no
+                # proprio TAC, em vez de a deixar implicita na declaracao.
+                self.program.add(tac_array_zero_init(item.name, str(item.size)))
 
             elif isinstance(item, VarUnsizedArrayDeclNode):
                 self.program.add(tac_array_decl(item.name, "?"))

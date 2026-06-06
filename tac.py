@@ -96,6 +96,9 @@ class TACInstruction:
         if self.op == "array_decl":
             return f"declare {self.result}[{self.arg1}]"
 
+        if self.op == "array_zero_init":
+            return f"array_zero_init {self.result}, {self.arg1}"
+
         if self.op == "array_init":
             return f"{self.result}[{self.arg1}] = {self.arg2}"
 
@@ -239,6 +242,7 @@ class TACInstruction:
             "write",
             "array_store",
             "array_init",
+            "array_zero_init",
             "declare",
             "array_decl",
             "read",
@@ -476,9 +480,17 @@ def tac_array_store(array_name: str, index: str, value: str) -> TACInstruction:
 
 
 def tac_array_decl(array_name: str, size: str) -> TACInstruction:
-    # Implica zero-init de todos os elementos (spec MOCP: valor por omissao = 0).
+    # Apenas reserva o vetor. A inicializacao por omissao (spec MOCP: valor 0)
+    # e materializada separadamente com 'array_zero_init' quando o tamanho e
+    # conhecido estaticamente.
     # Tamanho '?' significa dimensao determinada em tempo de execucao (ex.: lers()).
     return TACInstruction(op="array_decl", result=array_name, arg1=size)
+
+
+def tac_array_zero_init(array_name: str, size: str) -> TACInstruction:
+    # Inicializa explicitamente todos os 'size' elementos de 'array_name' a 0,
+    # tornando visivel no TAC a semantica de valor por omissao da MOCP.
+    return TACInstruction(op="array_zero_init", result=array_name, arg1=size)
 
 
 def tac_array_init(array_name: str, index: str, value: str) -> TACInstruction:
