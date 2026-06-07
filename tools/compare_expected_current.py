@@ -1,4 +1,4 @@
-import re, subprocess, difflib
+import re, subprocess, difflib, sys, os
 
 def normalize(s):
     if s is None:
@@ -13,7 +13,7 @@ def normalize(s):
 name='exemplo_correto'
 with open(f'Testes/expected/{name}.stdout.txt','r',encoding='utf-8',errors='replace') as f:
     expected=f.read()
-proc=subprocess.run(['python','main.py',f'Testes/{name}.mocp'], capture_output=True, text=True, encoding='utf-8', errors='replace')
+proc=subprocess.run([sys.executable,'main.py',f'Testes/{name}.mocp'], capture_output=True, text=True, encoding='utf-8', errors='replace', env={**os.environ, 'PYTHONIOENCODING':'utf-8'})
 current=proc.stdout
 ne=normalize(expected)
 nc=normalize(current)

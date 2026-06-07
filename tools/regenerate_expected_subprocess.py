@@ -1,4 +1,4 @@
-import subprocess, glob, os
+import subprocess, glob, os, sys
 from pathlib import Path
 root = Path('.')
 tests_dir = root / 'Testes'
@@ -9,7 +9,7 @@ for path in sorted(tests_dir.glob('*.mocp')):
     name = path.stem
     print('Generating expectation for', name)
     p = subprocess.run(
-        ['python', str(root / 'main.py'), str(path)],
+        [sys.executable, str(root / 'main.py'), str(path)],
         capture_output=True,
         text=True,
         encoding='utf-8',

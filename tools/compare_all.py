@@ -1,4 +1,4 @@
-import os, glob, subprocess, re, difflib
+import os, glob, subprocess, re, difflib, sys
 
 def normalize(s):
     if s is None:
@@ -30,7 +30,7 @@ for path in files:
         continue
     with open(exp_path, 'r', encoding='utf-8', errors='replace') as f:
         expected = f.read()
-    proc = subprocess.run(['python', os.path.join(root,'main.py'), path], capture_output=True, text=True, encoding='utf-8', errors='replace')
+    proc = subprocess.run([sys.executable, os.path.join(root,'main.py'), path], capture_output=True, text=True, encoding='utf-8', errors='replace', env={**os.environ, 'PYTHONIOENCODING':'utf-8'})
     current = proc.stdout
     ne = normalize(expected)
     nc = normalize(current)

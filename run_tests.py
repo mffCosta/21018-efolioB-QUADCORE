@@ -7,6 +7,7 @@ Autores: Maria Costa (2304361) | João Rodrigues (2203474) | Nuno Rolo (1900405)
 
 import os
 import subprocess
+import sys
 from pathlib import Path
 from typing import Optional
 
@@ -75,7 +76,7 @@ def run_test(path: Path) -> None:
         return
 
     result = subprocess.run(
-        ["python", "main.py", str(path)],
+        [sys.executable, "main.py", str(path)],
         capture_output=True,
         text=True,
         encoding="utf-8",
