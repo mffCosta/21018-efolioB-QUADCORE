@@ -1,0 +1,340 @@
+Análise concluída com sucesso.
+
+AST gerada:
+----------------------------------------
+ProgramNode
+  prototypes: [
+    PrototypeNode
+      return_type: 'real'
+      name: 'media'
+      params: [
+        ParamNode
+          param_type: 'real'
+          name: ''
+          is_array: True
+        ParamNode
+          param_type: 'inteiro'
+          name: ''
+          is_array: False
+      ]
+    PrototypeNode
+      return_type: 'vazio'
+      name: 'principal'
+      params: []
+  ]
+  global_decls: []
+  functions: [
+    FunctionDefNode
+      return_type: 'real'
+      name: 'media'
+      params: [
+        ParamNode
+          param_type: 'real'
+          name: 'v'
+          is_array: True
+        ParamNode
+          param_type: 'inteiro'
+          name: 'tamanho'
+          is_array: False
+      ]
+      body:
+        BlockNode
+          declarations: [
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarSimpleDeclNode
+                  name: 'i'
+              ]
+            VarDeclNode
+              var_type: 'real'
+              items: [
+                VarInitDeclNode
+                  name: 'soma'
+                  value:
+                    IntLiteralNode
+                      value: 0
+              ]
+          ]
+          statements: [
+            ForStmtNode
+              init:
+                AssignExprNode
+                  target:
+                    IdentifierNode
+                      name: 'i'
+                  value:
+                    IntLiteralNode
+                      value: 0
+              condition:
+                RelationalCondNode
+                  left:
+                    IdentifierNode
+                      name: 'i'
+                  operator: '<'
+                  right:
+                    IdentifierNode
+                      name: 'tamanho'
+              update:
+                AssignExprNode
+                  target:
+                    IdentifierNode
+                      name: 'i'
+                  value:
+                    BinaryExprNode
+                      left:
+                        IdentifierNode
+                          name: 'i'
+                      operator: '+'
+                      right:
+                        IntLiteralNode
+                          value: 1
+              body:
+                BlockNode
+                  declarations: []
+                  statements: [
+                    AssignStmtNode
+                      target:
+                        IdentifierNode
+                          name: 'soma'
+                      value:
+                        BinaryExprNode
+                          left:
+                            IdentifierNode
+                              name: 'soma'
+                          operator: '+'
+                          right:
+                            ArrayAccessNode
+                              name: 'v'
+                              index:
+                                IdentifierNode
+                                  name: 'i'
+                  ]
+            ReturnStmtNode
+              value:
+                BinaryExprNode
+                  left:
+                    IdentifierNode
+                      name: 'soma'
+                  operator: '/'
+                  right:
+                    IdentifierNode
+                      name: 'tamanho'
+          ]
+    FunctionDefNode
+      return_type: 'vazio'
+      name: 'principal'
+      params: []
+      body:
+        BlockNode
+          declarations: [
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarSimpleDeclNode
+                  name: 'i'
+                VarSimpleDeclNode
+                  name: 'n'
+              ]
+            VarDeclNode
+              var_type: 'real'
+              items: [
+                VarSizedArrayDeclNode
+                  name: 'v'
+                  size: 100
+              ]
+          ]
+          statements: [
+            ExprStmtNode
+              expr:
+                FunctionCallNode
+                  name: 'escrevers'
+                  args: [
+                    StringLiteralNode
+                      value: 'Introduza tamanho e valores: '
+                  ]
+                  is_reserved_io: True
+            AssignStmtNode
+              target:
+                IdentifierNode
+                  name: 'n'
+              value:
+                FunctionCallNode
+                  name: 'ler'
+                  args: []
+                  is_reserved_io: True
+            ForStmtNode
+              init:
+                AssignExprNode
+                  target:
+                    IdentifierNode
+                      name: 'i'
+                  value:
+                    IntLiteralNode
+                      value: 0
+              condition:
+                RelationalCondNode
+                  left:
+                    IdentifierNode
+                      name: 'i'
+                  operator: '<'
+                  right:
+                    IdentifierNode
+                      name: 'n'
+              update:
+                AssignExprNode
+                  target:
+                    IdentifierNode
+                      name: 'i'
+                  value:
+                    BinaryExprNode
+                      left:
+                        IdentifierNode
+                          name: 'i'
+                      operator: '+'
+                      right:
+                        IntLiteralNode
+                          value: 1
+              body:
+                BlockNode
+                  declarations: []
+                  statements: [
+                    AssignStmtNode
+                      target:
+                        ArrayAccessNode
+                          name: 'v'
+                          index:
+                            IdentifierNode
+                              name: 'i'
+                      value:
+                        FunctionCallNode
+                          name: 'ler'
+                          args: []
+                          is_reserved_io: True
+                  ]
+            ExprStmtNode
+              expr:
+                FunctionCallNode
+                  name: 'escrever'
+                  args: [
+                    FunctionCallNode
+                      name: 'media'
+                      args: [
+                        IdentifierNode
+                          name: 'v'
+                        IdentifierNode
+                          name: 'n'
+                      ]
+                      is_reserved_io: False
+                  ]
+                  is_reserved_io: True
+          ]
+  ]
+
+Código intermédio TAC original:
+----------------------------------------
+0000: func media:
+0001: declare v
+0002: v = getparam 0
+0003: declare tamanho
+0004: tamanho = getparam 1
+0005: declare i
+0006: i = 0
+0007: declare soma
+0008: t1 = int_to_real 0
+0009: soma = t1
+0010: i = 0
+0011: L1:
+0012: t2 = i < tamanho
+0013: ifFalse t2 goto L2
+0014: t3 = v[i]
+0015: t4 = soma + t3
+0016: soma = t4
+0017: t5 = i + 1
+0018: i = t5
+0019: goto L1
+0020: L2:
+0021: t6 = int_to_real tamanho
+0022: t7 = soma / t6
+0023: return t7
+0024: endfunc media
+0025: func principal:
+0026: declare i
+0027: i = 0
+0028: declare n
+0029: n = 0
+0030: declare v[100]
+0031: array_zero_init v, 100
+0032: call escrevers, "Introduza tamanho e valores: "
+0033: t8 = call ler, 0
+0034: n = t8
+0035: i = 0
+0036: L3:
+0037: t9 = i < n
+0038: ifFalse t9 goto L4
+0039: t10 = call ler, 0
+0040: t11 = int_to_real t10
+0041: v[i] = t11
+0042: t12 = i + 1
+0043: i = t12
+0044: goto L3
+0045: L4:
+0046: param v
+0047: param n
+0048: t13 = call media, 2
+0049: call escrever, t13
+0050: endfunc principal
+
+Código intermédio TAC otimizado:
+----------------------------------------
+0000: func media:
+0001: declare v
+0002: v = getparam 0
+0003: declare tamanho
+0004: tamanho = getparam 1
+0005: declare i
+0006: i = 0
+0007: declare soma
+0008: t1 = int_to_real 0
+0009: soma = t1
+0010: i = 0
+0011: L1:
+0012: t2 = i < tamanho
+0013: ifFalse t2 goto L2
+0014: t3 = v[i]
+0015: t4 = soma + t3
+0016: soma = t4
+0017: t5 = i + 1
+0018: i = t5
+0019: goto L1
+0020: L2:
+0021: t6 = int_to_real tamanho
+0022: t7 = soma / t6
+0023: return t7
+0024: endfunc media
+0025: func principal:
+0026: declare i
+0027: i = 0
+0028: declare n
+0029: n = 0
+0030: declare v[100]
+0031: array_zero_init v, 100
+0032: call escrevers, "Introduza tamanho e valores: "
+0033: t8 = call ler, 0
+0034: n = t8
+0035: i = 0
+0036: L3:
+0037: t9 = i < n
+0038: ifFalse t9 goto L4
+0039: t10 = call ler, 0
+0040: t11 = int_to_real t10
+0041: v[i] = t11
+0042: t12 = i + 1
+0043: i = t12
+0044: goto L3
+0045: L4:
+0046: param v
+0047: param n
+0048: t13 = call media, 2
+0049: call escrever, t13
+0050: endfunc principal

@@ -1,0 +1,3 @@
+Foram encontrados erros:
+[LÉXICO] linha 29, coluna 16: carácter inesperado '@'.
+[LÉXICO] linha 36, coluna 14: string não terminada.

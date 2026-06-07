@@ -1,0 +1,639 @@
+Análise concluída com sucesso.
+
+AST gerada:
+----------------------------------------
+ProgramNode
+  prototypes: [
+    PrototypeNode
+      return_type: 'inteiro'
+      name: 'fatorial'
+      params: [
+        ParamNode
+          param_type: 'inteiro'
+          name: 'n'
+          is_array: False
+      ]
+  ]
+  global_decls: []
+  functions: [
+    FunctionDefNode
+      return_type: 'vazio'
+      name: 'principal'
+      params: []
+      body:
+        BlockNode
+          declarations: [
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarSimpleDeclNode
+                  name: 'resultado'
+              ]
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarSimpleDeclNode
+                  name: 'num'
+              ]
+            VarDeclNode
+              var_type: 'real'
+              items: [
+                VarSimpleDeclNode
+                  name: 'valor_real'
+              ]
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarSizedArrayDeclNode
+                  name: 'vetor'
+                  size: 10
+              ]
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarSimpleDeclNode
+                  name: 'i'
+              ]
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarSimpleDeclNode
+                  name: 'j'
+              ]
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarSimpleDeclNode
+                  name: 'temp'
+              ]
+          ]
+          statements: [
+            ExprStmtNode
+              expr:
+                FunctionCallNode
+                  name: 'escrever'
+                  args: [
+                    IntLiteralNode
+                      value: 10
+                  ]
+                  is_reserved_io: True
+            AssignStmtNode
+              target:
+                IdentifierNode
+                  name: 'num'
+              value:
+                FunctionCallNode
+                  name: 'ler'
+                  args: []
+                  is_reserved_io: True
+            AssignStmtNode
+              target:
+                IdentifierNode
+                  name: 'resultado'
+              value:
+                FunctionCallNode
+                  name: 'fatorial'
+                  args: [
+                    IdentifierNode
+                      name: 'num'
+                  ]
+                  is_reserved_io: False
+            ExprStmtNode
+              expr:
+                FunctionCallNode
+                  name: 'escrever'
+                  args: [
+                    IdentifierNode
+                      name: 'resultado'
+                  ]
+                  is_reserved_io: True
+            AssignStmtNode
+              target:
+                IdentifierNode
+                  name: 'valor_real'
+              value:
+                CastExprNode
+                  target_type: 'real'
+                  expr:
+                    IdentifierNode
+                      name: 'resultado'
+            ExprStmtNode
+              expr:
+                FunctionCallNode
+                  name: 'escrever'
+                  args: [
+                    IdentifierNode
+                      name: 'valor_real'
+                  ]
+                  is_reserved_io: True
+            AssignStmtNode
+              target:
+                IdentifierNode
+                  name: 'i'
+              value:
+                IntLiteralNode
+                  value: 0
+            WhileStmtNode
+              condition:
+                RelationalCondNode
+                  left:
+                    IdentifierNode
+                      name: 'i'
+                  operator: '<'
+                  right:
+                    IntLiteralNode
+                      value: 10
+              body:
+                BlockNode
+                  declarations: []
+                  statements: [
+                    AssignStmtNode
+                      target:
+                        ArrayAccessNode
+                          name: 'vetor'
+                          index:
+                            IdentifierNode
+                              name: 'i'
+                      value:
+                        BinaryExprNode
+                          left:
+                            IdentifierNode
+                              name: 'i'
+                          operator: '*'
+                          right:
+                            IntLiteralNode
+                              value: 2
+                    AssignStmtNode
+                      target:
+                        IdentifierNode
+                          name: 'i'
+                      value:
+                        BinaryExprNode
+                          left:
+                            IdentifierNode
+                              name: 'i'
+                          operator: '+'
+                          right:
+                            IntLiteralNode
+                              value: 1
+                  ]
+            AssignStmtNode
+              target:
+                IdentifierNode
+                  name: 'i'
+              value:
+                IntLiteralNode
+                  value: 0
+            WhileStmtNode
+              condition:
+                RelationalCondNode
+                  left:
+                    IdentifierNode
+                      name: 'i'
+                  operator: '<'
+                  right:
+                    IntLiteralNode
+                      value: 10
+              body:
+                BlockNode
+                  declarations: []
+                  statements: [
+                    AssignStmtNode
+                      target:
+                        IdentifierNode
+                          name: 'j'
+                      value:
+                        IntLiteralNode
+                          value: 0
+                    WhileStmtNode
+                      condition:
+                        RelationalCondNode
+                          left:
+                            IdentifierNode
+                              name: 'j'
+                          operator: '<'
+                          right:
+                            IntLiteralNode
+                              value: 9
+                      body:
+                        BlockNode
+                          declarations: []
+                          statements: [
+                            IfStmtNode
+                              condition:
+                                RelationalCondNode
+                                  left:
+                                    ArrayAccessNode
+                                      name: 'vetor'
+                                      index:
+                                        IdentifierNode
+                                          name: 'j'
+                                  operator: '>'
+                                  right:
+                                    ArrayAccessNode
+                                      name: 'vetor'
+                                      index:
+                                        BinaryExprNode
+                                          left:
+                                            IdentifierNode
+                                              name: 'j'
+                                          operator: '+'
+                                          right:
+                                            IntLiteralNode
+                                              value: 1
+                              then_block:
+                                BlockNode
+                                  declarations: []
+                                  statements: [
+                                    AssignStmtNode
+                                      target:
+                                        IdentifierNode
+                                          name: 'temp'
+                                      value:
+                                        ArrayAccessNode
+                                          name: 'vetor'
+                                          index:
+                                            IdentifierNode
+                                              name: 'j'
+                                    AssignStmtNode
+                                      target:
+                                        ArrayAccessNode
+                                          name: 'vetor'
+                                          index:
+                                            IdentifierNode
+                                              name: 'j'
+                                      value:
+                                        ArrayAccessNode
+                                          name: 'vetor'
+                                          index:
+                                            BinaryExprNode
+                                              left:
+                                                IdentifierNode
+                                                  name: 'j'
+                                              operator: '+'
+                                              right:
+                                                IntLiteralNode
+                                                  value: 1
+                                    AssignStmtNode
+                                      target:
+                                        ArrayAccessNode
+                                          name: 'vetor'
+                                          index:
+                                            BinaryExprNode
+                                              left:
+                                                IdentifierNode
+                                                  name: 'j'
+                                              operator: '+'
+                                              right:
+                                                IntLiteralNode
+                                                  value: 1
+                                      value:
+                                        IdentifierNode
+                                          name: 'temp'
+                                  ]
+                              else_block: None
+                            AssignStmtNode
+                              target:
+                                IdentifierNode
+                                  name: 'j'
+                              value:
+                                BinaryExprNode
+                                  left:
+                                    IdentifierNode
+                                      name: 'j'
+                                  operator: '+'
+                                  right:
+                                    IntLiteralNode
+                                      value: 1
+                          ]
+                    AssignStmtNode
+                      target:
+                        IdentifierNode
+                          name: 'i'
+                      value:
+                        BinaryExprNode
+                          left:
+                            IdentifierNode
+                              name: 'i'
+                          operator: '+'
+                          right:
+                            IntLiteralNode
+                              value: 1
+                  ]
+            AssignStmtNode
+              target:
+                IdentifierNode
+                  name: 'i'
+              value:
+                IntLiteralNode
+                  value: 0
+            WhileStmtNode
+              condition:
+                RelationalCondNode
+                  left:
+                    IdentifierNode
+                      name: 'i'
+                  operator: '<'
+                  right:
+                    IntLiteralNode
+                      value: 10
+              body:
+                BlockNode
+                  declarations: []
+                  statements: [
+                    ExprStmtNode
+                      expr:
+                        FunctionCallNode
+                          name: 'escrever'
+                          args: [
+                            ArrayAccessNode
+                              name: 'vetor'
+                              index:
+                                IdentifierNode
+                                  name: 'i'
+                          ]
+                          is_reserved_io: True
+                    AssignStmtNode
+                      target:
+                        IdentifierNode
+                          name: 'i'
+                      value:
+                        BinaryExprNode
+                          left:
+                            IdentifierNode
+                              name: 'i'
+                          operator: '+'
+                          right:
+                            IntLiteralNode
+                              value: 1
+                  ]
+          ]
+    FunctionDefNode
+      return_type: 'inteiro'
+      name: 'fatorial'
+      params: [
+        ParamNode
+          param_type: 'inteiro'
+          name: 'n'
+          is_array: False
+      ]
+      body:
+        BlockNode
+          declarations: [
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarSimpleDeclNode
+                  name: 'resultado'
+              ]
+          ]
+          statements: [
+            IfStmtNode
+              condition:
+                RelationalCondNode
+                  left:
+                    IdentifierNode
+                      name: 'n'
+                  operator: '<='
+                  right:
+                    IntLiteralNode
+                      value: 1
+              then_block:
+                BlockNode
+                  declarations: []
+                  statements: [
+                    AssignStmtNode
+                      target:
+                        IdentifierNode
+                          name: 'resultado'
+                      value:
+                        IntLiteralNode
+                          value: 1
+                  ]
+              else_block:
+                BlockNode
+                  declarations: []
+                  statements: [
+                    AssignStmtNode
+                      target:
+                        IdentifierNode
+                          name: 'resultado'
+                      value:
+                        BinaryExprNode
+                          left:
+                            IdentifierNode
+                              name: 'n'
+                          operator: '*'
+                          right:
+                            FunctionCallNode
+                              name: 'fatorial'
+                              args: [
+                                BinaryExprNode
+                                  left:
+                                    IdentifierNode
+                                      name: 'n'
+                                  operator: '-'
+                                  right:
+                                    IntLiteralNode
+                                      value: 1
+                              ]
+                              is_reserved_io: False
+                  ]
+            ReturnStmtNode
+              value:
+                IdentifierNode
+                  name: 'resultado'
+          ]
+  ]
+
+Código intermédio TAC original:
+----------------------------------------
+0000: func principal:
+0001: declare resultado
+0002: resultado = 0
+0003: declare num
+0004: num = 0
+0005: declare valor_real
+0006: valor_real = 0.0
+0007: declare vetor[10]
+0008: array_zero_init vetor, 10
+0009: declare i
+0010: i = 0
+0011: declare j
+0012: j = 0
+0013: declare temp
+0014: temp = 0
+0015: call escrever, 10
+0016: t1 = call ler, 0
+0017: num = t1
+0018: param num
+0019: t2 = call fatorial, 1
+0020: resultado = t2
+0021: call escrever, resultado
+0022: t3 = (real) resultado
+0023: valor_real = t3
+0024: call escrever, valor_real
+0025: i = 0
+0026: L1:
+0027: t4 = i < 10
+0028: ifFalse t4 goto L2
+0029: t5 = i * 2
+0030: vetor[i] = t5
+0031: t6 = i + 1
+0032: i = t6
+0033: goto L1
+0034: L2:
+0035: i = 0
+0036: L3:
+0037: t7 = i < 10
+0038: ifFalse t7 goto L4
+0039: j = 0
+0040: L5:
+0041: t8 = j < 9
+0042: ifFalse t8 goto L6
+0043: t9 = vetor[j]
+0044: t10 = j + 1
+0045: t11 = vetor[t10]
+0046: t12 = t9 > t11
+0047: ifFalse t12 goto L7
+0048: t13 = vetor[j]
+0049: temp = t13
+0050: t14 = j + 1
+0051: t15 = vetor[t14]
+0052: vetor[j] = t15
+0053: t16 = j + 1
+0054: vetor[t16] = temp
+0055: L7:
+0056: t17 = j + 1
+0057: j = t17
+0058: goto L5
+0059: L6:
+0060: t18 = i + 1
+0061: i = t18
+0062: goto L3
+0063: L4:
+0064: i = 0
+0065: L9:
+0066: t19 = i < 10
+0067: ifFalse t19 goto L10
+0068: t20 = vetor[i]
+0069: call escrever, t20
+0070: t21 = i + 1
+0071: i = t21
+0072: goto L9
+0073: L10:
+0074: endfunc principal
+0075: func fatorial:
+0076: declare n
+0077: n = getparam 0
+0078: declare resultado
+0079: resultado = 0
+0080: t22 = n <= 1
+0081: ifFalse t22 goto L11
+0082: resultado = 1
+0083: goto L12
+0084: L11:
+0085: t23 = n - 1
+0086: param t23
+0087: t24 = call fatorial, 1
+0088: t25 = n * t24
+0089: resultado = t25
+0090: L12:
+0091: return resultado
+0092: endfunc fatorial
+
+Código intermédio TAC otimizado:
+----------------------------------------
+0000: func principal:
+0001: declare resultado
+0002: resultado = 0
+0003: declare num
+0004: num = 0
+0005: declare valor_real
+0006: valor_real = 0.0
+0007: declare vetor[10]
+0008: array_zero_init vetor, 10
+0009: declare i
+0010: i = 0
+0011: declare j
+0012: j = 0
+0013: declare temp
+0014: temp = 0
+0015: call escrever, 10
+0016: t1 = call ler, 0
+0017: num = t1
+0018: param t1
+0019: t2 = call fatorial, 1
+0020: resultado = t2
+0021: call escrever, resultado
+0022: t3 = (real) t2
+0023: valor_real = t3
+0024: call escrever, valor_real
+0025: i = 0
+0026: L1:
+0027: t4 = i < 10
+0028: ifFalse t4 goto L2
+0029: t5 = i * 2
+0030: vetor[i] = t5
+0031: t6 = i + 1
+0032: i = t6
+0033: goto L1
+0034: L2:
+0035: i = 0
+0036: L3:
+0037: t7 = i < 10
+0038: ifFalse t7 goto L4
+0039: j = 0
+0040: L5:
+0041: t8 = j < 9
+0042: ifFalse t8 goto L6
+0043: t9 = vetor[j]
+0044: t10 = j + 1
+0045: t11 = vetor[t10]
+0046: t12 = t9 > t11
+0047: ifFalse t12 goto L7
+0048: t13 = vetor[j]
+0049: temp = t13
+0050: t14 = j + 1
+0051: t15 = vetor[t14]
+0052: vetor[j] = t15
+0053: t16 = j + 1
+0054: vetor[t16] = temp
+0055: L7:
+0056: t17 = j + 1
+0057: j = t17
+0058: goto L5
+0059: L6:
+0060: t18 = i + 1
+0061: i = t18
+0062: goto L3
+0063: L4:
+0064: i = 0
+0065: L9:
+0066: t19 = i < 10
+0067: ifFalse t19 goto L10
+0068: t20 = vetor[i]
+0069: call escrever, t20
+0070: t21 = i + 1
+0071: i = t21
+0072: goto L9
+0073: L10:
+0074: endfunc principal
+0075: func fatorial:
+0076: declare n
+0077: n = getparam 0
+0078: declare resultado
+0079: resultado = 0
+0080: t22 = n <= 1
+0081: ifFalse t22 goto L11
+0082: resultado = 1
+0083: goto L12
+0084: L11:
+0085: t23 = n - 1
+0086: param t23
+0087: t24 = call fatorial, 1
+0088: t25 = n * t24
+0089: resultado = t25
+0090: L12:
+0091: return resultado
+0092: endfunc fatorial

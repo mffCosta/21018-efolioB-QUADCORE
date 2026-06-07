@@ -1,0 +1,11 @@
+Foram encontrados erros:
+[LÉXICO] linha 11, coluna 12: carácter inesperado '@'.
+[LÉXICO/SINTÁTICO] linha 16, coluna 0: Palavra-chave C 'int' detetada. Em MOCP use 'inteiro'.
+[LÉXICO/SINTÁTICO] linha 16, coluna 12: Palavra-chave C 'int' detetada. Em MOCP use 'inteiro'.
+[LÉXICO/SINTÁTICO] linha 24, coluna 4: Palavra-chave C 'for' detetada. Em MOCP use 'para'.
+[LÉXICO/SINTÁTICO] linha 24, coluna 23: Operador '++' não é suportado em MOCP. Use i = i + 1.
+[LÉXICO/SINTÁTICO] linha 25, coluna 9: Operador '++' não é suportado em MOCP. Use i = i + 1.
+[LÉXICO/SINTÁTICO] linha 27, coluna 4: Palavra-chave C 'return' detetada. Em MOCP use 'retornar'.
+[LÉXICO/SINTÁTICO] linha 39, coluna 6: Operador '-=' não é suportado em MOCP. Use x = x - valor.
+[LÉXICO/SINTÁTICO] linha 42, coluna 6: Operador '+=' não é suportado em MOCP. Use x = x + valor.
+[LÉXICO/SINTÁTICO] linha 45, coluna 4: Palavra-chave C 'if' detetada. Em MOCP use 'se'.

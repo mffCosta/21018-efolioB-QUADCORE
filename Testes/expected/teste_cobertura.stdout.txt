@@ -1,0 +1,574 @@
+Análise concluída com sucesso.
+
+AST gerada:
+----------------------------------------
+ProgramNode
+  prototypes: [
+    PrototypeNode
+      return_type: 'inteiro'
+      name: 'dobro'
+      params: [
+        ParamNode
+          param_type: 'inteiro'
+          name: 'x'
+          is_array: False
+      ]
+  ]
+  global_decls: [
+    VarDeclNode
+      var_type: 'inteiro'
+      items: [
+        VarInitDeclNode
+          name: 'g'
+          value:
+            IntLiteralNode
+              value: 7
+      ]
+    VarDeclNode
+      var_type: 'real'
+      items: [
+        VarInitDeclNode
+          name: 'gr'
+          value:
+            RealLiteralNode
+              value: 1.5
+      ]
+  ]
+  functions: [
+    FunctionDefNode
+      return_type: 'inteiro'
+      name: 'dobro'
+      params: [
+        ParamNode
+          param_type: 'inteiro'
+          name: 'x'
+          is_array: False
+      ]
+      body:
+        BlockNode
+          declarations: []
+          statements: [
+            ReturnStmtNode
+              value:
+                BinaryExprNode
+                  left:
+                    IdentifierNode
+                      name: 'x'
+                  operator: '*'
+                  right:
+                    IntLiteralNode
+                      value: 2
+          ]
+    FunctionDefNode
+      return_type: 'vazio'
+      name: 'principal'
+      params: []
+      body:
+        BlockNode
+          declarations: [
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarInitDeclNode
+                  name: 'm'
+                  value:
+                    IntLiteralNode
+                      value: 1
+                VarInitDeclNode
+                  name: 'n'
+                  value:
+                    BinaryExprNode
+                      left:
+                        IntLiteralNode
+                          value: 2
+                      operator: '*'
+                      right:
+                        IdentifierNode
+                          name: 'm'
+                VarInitDeclNode
+                  name: 'soma'
+                  value:
+                    BinaryExprNode
+                      left:
+                        IdentifierNode
+                          name: 'm'
+                      operator: '+'
+                      right:
+                        IdentifierNode
+                          name: 'n'
+              ]
+            VarDeclNode
+              var_type: 'real'
+              items: [
+                VarInitDeclNode
+                  name: 'x'
+                  value:
+                    RealLiteralNode
+                      value: 3.14
+                VarInitDeclNode
+                  name: 'y'
+                  value:
+                    BinaryExprNode
+                      left:
+                        IdentifierNode
+                          name: 'x'
+                      operator: '/'
+                      right:
+                        IntLiteralNode
+                          value: 2
+              ]
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarArrayInitDeclNode
+                  name: 'v'
+                  values: [
+                    IntLiteralNode
+                      value: 10
+                    IntLiteralNode
+                      value: 20
+                    IntLiteralNode
+                      value: 30
+                  ]
+              ]
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarArrayExprInitDeclNode
+                  name: 's'
+                  value:
+                    FunctionCallNode
+                      name: 'lers'
+                      args: []
+                      is_reserved_io: True
+              ]
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarInitDeclNode
+                  name: 'c'
+                  value:
+                    FunctionCallNode
+                      name: 'lerc'
+                      args: []
+                      is_reserved_io: True
+              ]
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarInitDeclNode
+                  name: 'd'
+                  value:
+                    BinaryExprNode
+                      left:
+                        IntLiteralNode
+                          value: 17
+                      operator: '/'
+                      right:
+                        IntLiteralNode
+                          value: 5
+              ]
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarInitDeclNode
+                  name: 'r'
+                  value:
+                    BinaryExprNode
+                      left:
+                        IntLiteralNode
+                          value: 17
+                      operator: '%'
+                      right:
+                        IntLiteralNode
+                          value: 5
+              ]
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarInitDeclNode
+                  name: 'neg'
+                  value:
+                    UnaryExprNode
+                      operator: '-'
+                      operand:
+                        IdentifierNode
+                          name: 'm'
+              ]
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarInitDeclNode
+                  name: 'ci'
+                  value:
+                    CastExprNode
+                      target_type: 'inteiro'
+                      expr:
+                        IdentifierNode
+                          name: 'x'
+              ]
+          ]
+          statements: [
+            IfStmtNode
+              condition:
+                BinaryLogicalCondNode
+                  left:
+                    RelationalCondNode
+                      left:
+                        IdentifierNode
+                          name: 'm'
+                      operator: '>'
+                      right:
+                        IntLiteralNode
+                          value: 0
+                  operator: '||'
+                  right:
+                    RelationalCondNode
+                      left:
+                        IdentifierNode
+                          name: 'n'
+                      operator: '<'
+                      right:
+                        IntLiteralNode
+                          value: 0
+              then_block:
+                BlockNode
+                  declarations: []
+                  statements: [
+                    ExprStmtNode
+                      expr:
+                        FunctionCallNode
+                          name: 'escrever'
+                          args: [
+                            IdentifierNode
+                              name: 'm'
+                          ]
+                          is_reserved_io: True
+                  ]
+              else_block: None
+            IfStmtNode
+              condition:
+                NotCondNode
+                  operand:
+                    RelationalCondNode
+                      left:
+                        IdentifierNode
+                          name: 'm'
+                      operator: '>'
+                      right:
+                        IntLiteralNode
+                          value: 5
+              then_block:
+                BlockNode
+                  declarations: []
+                  statements: [
+                    ExprStmtNode
+                      expr:
+                        FunctionCallNode
+                          name: 'escrever'
+                          args: [
+                            IdentifierNode
+                              name: 'n'
+                          ]
+                          is_reserved_io: True
+                  ]
+              else_block: None
+            IfStmtNode
+              condition:
+                BinaryLogicalCondNode
+                  left:
+                    BinaryLogicalCondNode
+                      left:
+                        RelationalCondNode
+                          left:
+                            IdentifierNode
+                              name: 'm'
+                          operator: '>'
+                          right:
+                            IntLiteralNode
+                              value: 0
+                      operator: '&&'
+                      right:
+                        RelationalCondNode
+                          left:
+                            IdentifierNode
+                              name: 'n'
+                          operator: '>'
+                          right:
+                            IntLiteralNode
+                              value: 0
+                  operator: '||'
+                  right:
+                    RelationalCondNode
+                      left:
+                        IdentifierNode
+                          name: 'soma'
+                      operator: '>'
+                      right:
+                        IntLiteralNode
+                          value: 100
+              then_block:
+                BlockNode
+                  declarations: []
+                  statements: [
+                    ExprStmtNode
+                      expr:
+                        FunctionCallNode
+                          name: 'escrever'
+                          args: [
+                            IdentifierNode
+                              name: 'soma'
+                          ]
+                          is_reserved_io: True
+                  ]
+              else_block: None
+            ExprStmtNode
+              expr:
+                FunctionCallNode
+                  name: 'escreverc'
+                  args: [
+                    IdentifierNode
+                      name: 'c'
+                  ]
+                  is_reserved_io: True
+            ExprStmtNode
+              expr:
+                FunctionCallNode
+                  name: 'escreverv'
+                  args: [
+                    IdentifierNode
+                      name: 'v'
+                  ]
+                  is_reserved_io: True
+            ExprStmtNode
+              expr:
+                FunctionCallNode
+                  name: 'escrevers'
+                  args: [
+                    IdentifierNode
+                      name: 's'
+                  ]
+                  is_reserved_io: True
+            IfStmtNode
+              condition:
+                RelationalCondNode
+                  left:
+                    IdentifierNode
+                      name: 'g'
+                  operator: '>'
+                  right:
+                    IntLiteralNode
+                      value: 0
+              then_block:
+                BlockNode
+                  declarations: []
+                  statements: [
+                    ReturnStmtNode
+                      value: None
+                  ]
+              else_block: None
+            ExprStmtNode
+              expr:
+                FunctionCallNode
+                  name: 'escrever'
+                  args: [
+                    FunctionCallNode
+                      name: 'dobro'
+                      args: [
+                        IdentifierNode
+                          name: 'g'
+                      ]
+                      is_reserved_io: False
+                  ]
+                  is_reserved_io: True
+          ]
+  ]
+
+Código intermédio TAC original:
+----------------------------------------
+0000: declare g
+0001: g = 7
+0002: declare gr
+0003: gr = 1.5
+0004: func dobro:
+0005: declare x
+0006: x = getparam 0
+0007: t1 = x * 2
+0008: return t1
+0009: endfunc dobro
+0010: func principal:
+0011: declare m
+0012: m = 1
+0013: declare n
+0014: t2 = 2 * m
+0015: n = t2
+0016: declare soma
+0017: t3 = m + n
+0018: soma = t3
+0019: declare x
+0020: x = 3.14
+0021: declare y
+0022: t4 = int_to_real 2
+0023: t5 = x / t4
+0024: y = t5
+0025: declare v[3]
+0026: v[0] = 10
+0027: v[1] = 20
+0028: v[2] = 30
+0029: declare s[?]
+0030: t6 = call lers, 0
+0031: s = t6
+0032: declare c
+0033: t7 = call lerc, 0
+0034: c = t7
+0035: declare d
+0036: t8 = 17 / 5
+0037: d = t8
+0038: declare r
+0039: t9 = 17 % 5
+0040: r = t9
+0041: declare neg
+0042: t10 = -m
+0043: neg = t10
+0044: declare ci
+0045: t11 = (inteiro) x
+0046: ci = t11
+0047: t13 = m > 0
+0048: if t13 goto L3
+0049: t14 = n < 0
+0050: if t14 goto L3
+0051: t12 = 0
+0052: goto L4
+0053: L3:
+0054: t12 = 1
+0055: L4:
+0056: ifFalse t12 goto L1
+0057: call escrever, m
+0058: L1:
+0059: t15 = m > 5
+0060: t16 = t15 == 0
+0061: ifFalse t16 goto L5
+0062: call escrever, n
+0063: L5:
+0064: t19 = m > 0
+0065: ifFalse t19 goto L11
+0066: t20 = n > 0
+0067: ifFalse t20 goto L11
+0068: t18 = 1
+0069: goto L12
+0070: L11:
+0071: t18 = 0
+0072: L12:
+0073: if t18 goto L9
+0074: t21 = soma > 100
+0075: if t21 goto L9
+0076: t17 = 0
+0077: goto L10
+0078: L9:
+0079: t17 = 1
+0080: L10:
+0081: ifFalse t17 goto L7
+0082: call escrever, soma
+0083: L7:
+0084: call escreverc, c
+0085: call escreverv, v
+0086: call escrevers, s
+0087: t22 = g > 0
+0088: ifFalse t22 goto L13
+0089: return
+0090: L13:
+0091: param g
+0092: t23 = call dobro, 1
+0093: call escrever, t23
+0094: endfunc principal
+
+Código intermédio TAC otimizado:
+----------------------------------------
+0000: declare g
+0001: g = 7
+0002: declare gr
+0003: gr = 1.5
+0004: func dobro:
+0005: declare x
+0006: x = getparam 0
+0007: t1 = x * 2
+0008: return t1
+0009: endfunc dobro
+0010: func principal:
+0011: declare m
+0012: m = 1
+0013: declare n
+0014: n = 2
+0015: declare soma
+0016: soma = 3
+0017: declare x
+0018: x = 3.14
+0019: declare y
+0020: t4 = int_to_real 2
+0021: t5 = 3.14 / t4
+0022: y = t5
+0023: declare v[3]
+0024: v[0] = 10
+0025: v[1] = 20
+0026: v[2] = 30
+0027: declare s[?]
+0028: t6 = call lers, 0
+0029: s = t6
+0030: declare c
+0031: t7 = call lerc, 0
+0032: c = t7
+0033: declare d
+0034: d = 3
+0035: declare r
+0036: r = 2
+0037: declare neg
+0038: t10 = -m
+0039: neg = t10
+0040: declare ci
+0041: t11 = (inteiro) x
+0042: ci = t11
+0043: t13 = m > 0
+0044: if t13 goto L3
+0045: t14 = n < 0
+0046: if t14 goto L3
+0047: goto L4
+0048: L3:
+0049: t12 = 1
+0050: L4:
+0051: ifFalse t12 goto L1
+0052: call escrever, m
+0053: L1:
+0054: t15 = m > 5
+0055: t16 = t15 == 0
+0056: ifFalse t16 goto L5
+0057: call escrever, n
+0058: L5:
+0059: t19 = m > 0
+0060: ifFalse t19 goto L11
+0061: t20 = n > 0
+0062: ifFalse t20 goto L11
+0063: goto L12
+0064: L11:
+0065: t18 = 0
+0066: L12:
+0067: if t18 goto L9
+0068: t21 = soma > 100
+0069: if t21 goto L9
+0070: goto L10
+0071: L9:
+0072: t17 = 1
+0073: L10:
+0074: ifFalse t17 goto L7
+0075: call escrever, soma
+0076: L7:
+0077: call escreverc, c
+0078: call escreverv, v
+0079: call escrevers, s
+0080: t22 = g > 0
+0081: ifFalse t22 goto L13
+0082: return
+0083: L13:
+0084: param g
+0085: t23 = call dobro, 1
+0086: call escrever, t23
+0087: endfunc principal

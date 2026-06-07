@@ -1,0 +1,186 @@
+Análise concluída com sucesso.
+
+AST gerada:
+----------------------------------------
+ProgramNode
+  prototypes: [
+    PrototypeNode
+      return_type: 'inteiro'
+      name: 'fact'
+      params: [
+        ParamNode
+          param_type: 'inteiro'
+          name: ''
+          is_array: False
+      ]
+    PrototypeNode
+      return_type: 'vazio'
+      name: 'principal'
+      params: []
+  ]
+  global_decls: []
+  functions: [
+    FunctionDefNode
+      return_type: 'inteiro'
+      name: 'fact'
+      params: [
+        ParamNode
+          param_type: 'inteiro'
+          name: 'k'
+          is_array: False
+      ]
+      body:
+        BlockNode
+          declarations: []
+          statements: [
+            IfStmtNode
+              condition:
+                RelationalCondNode
+                  left:
+                    IdentifierNode
+                      name: 'k'
+                  operator: '<='
+                  right:
+                    IntLiteralNode
+                      value: 1
+              then_block:
+                BlockNode
+                  declarations: []
+                  statements: [
+                    ReturnStmtNode
+                      value:
+                        IntLiteralNode
+                          value: 1
+                  ]
+              else_block:
+                BlockNode
+                  declarations: []
+                  statements: [
+                    ReturnStmtNode
+                      value:
+                        BinaryExprNode
+                          left:
+                            IdentifierNode
+                              name: 'k'
+                          operator: '*'
+                          right:
+                            FunctionCallNode
+                              name: 'fact'
+                              args: [
+                                BinaryExprNode
+                                  left:
+                                    IdentifierNode
+                                      name: 'k'
+                                  operator: '-'
+                                  right:
+                                    IntLiteralNode
+                                      value: 1
+                              ]
+                              is_reserved_io: False
+                  ]
+          ]
+    FunctionDefNode
+      return_type: 'vazio'
+      name: 'principal'
+      params: []
+      body:
+        BlockNode
+          declarations: [
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarSimpleDeclNode
+                  name: 'n'
+              ]
+          ]
+          statements: [
+            ExprStmtNode
+              expr:
+                FunctionCallNode
+                  name: 'escrevers'
+                  args: [
+                    StringLiteralNode
+                      value: 'Introduza inteiro: '
+                  ]
+                  is_reserved_io: True
+            AssignStmtNode
+              target:
+                IdentifierNode
+                  name: 'n'
+              value:
+                FunctionCallNode
+                  name: 'ler'
+                  args: []
+                  is_reserved_io: True
+            ExprStmtNode
+              expr:
+                FunctionCallNode
+                  name: 'escrever'
+                  args: [
+                    FunctionCallNode
+                      name: 'fact'
+                      args: [
+                        IdentifierNode
+                          name: 'n'
+                      ]
+                      is_reserved_io: False
+                  ]
+                  is_reserved_io: True
+          ]
+  ]
+
+Código intermédio TAC original:
+----------------------------------------
+0000: func fact:
+0001: declare k
+0002: k = getparam 0
+0003: t1 = k <= 1
+0004: ifFalse t1 goto L1
+0005: return 1
+0006: goto L2
+0007: L1:
+0008: t2 = k - 1
+0009: param t2
+0010: t3 = call fact, 1
+0011: t4 = k * t3
+0012: return t4
+0013: L2:
+0014: endfunc fact
+0015: func principal:
+0016: declare n
+0017: n = 0
+0018: call escrevers, "Introduza inteiro: "
+0019: t5 = call ler, 0
+0020: n = t5
+0021: param n
+0022: t6 = call fact, 1
+0023: call escrever, t6
+0024: endfunc principal
+
+Código intermédio TAC otimizado:
+----------------------------------------
+0000: func fact:
+0001: declare k
+0002: k = getparam 0
+0003: t1 = k <= 1
+0004: ifFalse t1 goto L1
+0005: return 1
+0006: goto L2
+0007: L1:
+0008: t2 = k - 1
+0009: param t2
+0010: t3 = call fact, 1
+0011: t4 = k * t3
+0012: return t4
+0013: L2:
+0014: endfunc fact
+0015: func principal:
+0016: declare n
+0017: n = 0
+0018: call escrevers, "Introduza inteiro: "
+0019: t5 = call ler, 0
+0020: n = t5
+0021: param t5
+0022: t6 = call fact, 1
+0023: call escrever, t6
+0024: endfunc principal

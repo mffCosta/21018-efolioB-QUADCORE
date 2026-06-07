@@ -302,7 +302,7 @@ def main() -> int:
                 + tac_text
                 + "\n\nCódigo intermédio TAC otimizado:\n"
                 "----------------------------------------\n"
-                + optimized_tac_text
+                + optimized_tac_text,
             )
             print(f"TAC original e otimizado guardados em: {output_tac_path}")
         except Exception as e:

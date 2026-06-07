@@ -1,0 +1,1073 @@
+Análise concluída com sucesso.
+
+AST gerada:
+----------------------------------------
+ProgramNode
+  prototypes: [
+    PrototypeNode
+      return_type: 'inteiro'
+      name: 'fatorial'
+      params: [
+        ParamNode
+          param_type: 'inteiro'
+          name: 'n'
+          is_array: False
+      ]
+    PrototypeNode
+      return_type: 'inteiro'
+      name: 'soma'
+      params: [
+        ParamNode
+          param_type: 'inteiro'
+          name: 'a'
+          is_array: False
+        ParamNode
+          param_type: 'inteiro'
+          name: 'b'
+          is_array: False
+      ]
+    PrototypeNode
+      return_type: 'inteiro'
+      name: 'maximo'
+      params: [
+        ParamNode
+          param_type: 'inteiro'
+          name: 'a'
+          is_array: False
+        ParamNode
+          param_type: 'inteiro'
+          name: 'b'
+          is_array: False
+      ]
+    PrototypeNode
+      return_type: 'vazio'
+      name: 'imprimirVetor'
+      params: [
+        ParamNode
+          param_type: 'inteiro'
+          name: 'v'
+          is_array: True
+        ParamNode
+          param_type: 'inteiro'
+          name: 'tamanho'
+          is_array: False
+      ]
+  ]
+  global_decls: []
+  functions: [
+    FunctionDefNode
+      return_type: 'inteiro'
+      name: 'fatorial'
+      params: [
+        ParamNode
+          param_type: 'inteiro'
+          name: 'n'
+          is_array: False
+      ]
+      body:
+        BlockNode
+          declarations: [
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarSimpleDeclNode
+                  name: 'resultado'
+              ]
+          ]
+          statements: [
+            IfStmtNode
+              condition:
+                RelationalCondNode
+                  left:
+                    IdentifierNode
+                      name: 'n'
+                  operator: '<='
+                  right:
+                    IntLiteralNode
+                      value: 1
+              then_block:
+                BlockNode
+                  declarations: []
+                  statements: [
+                    AssignStmtNode
+                      target:
+                        IdentifierNode
+                          name: 'resultado'
+                      value:
+                        IntLiteralNode
+                          value: 1
+                  ]
+              else_block:
+                BlockNode
+                  declarations: []
+                  statements: [
+                    AssignStmtNode
+                      target:
+                        IdentifierNode
+                          name: 'resultado'
+                      value:
+                        BinaryExprNode
+                          left:
+                            IdentifierNode
+                              name: 'n'
+                          operator: '*'
+                          right:
+                            FunctionCallNode
+                              name: 'fatorial'
+                              args: [
+                                BinaryExprNode
+                                  left:
+                                    IdentifierNode
+                                      name: 'n'
+                                  operator: '-'
+                                  right:
+                                    IntLiteralNode
+                                      value: 1
+                              ]
+                              is_reserved_io: False
+                  ]
+            ReturnStmtNode
+              value:
+                IdentifierNode
+                  name: 'resultado'
+          ]
+    FunctionDefNode
+      return_type: 'inteiro'
+      name: 'soma'
+      params: [
+        ParamNode
+          param_type: 'inteiro'
+          name: 'a'
+          is_array: False
+        ParamNode
+          param_type: 'inteiro'
+          name: 'b'
+          is_array: False
+      ]
+      body:
+        BlockNode
+          declarations: [
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarSimpleDeclNode
+                  name: 'resultado'
+              ]
+          ]
+          statements: [
+            AssignStmtNode
+              target:
+                IdentifierNode
+                  name: 'resultado'
+              value:
+                BinaryExprNode
+                  left:
+                    IdentifierNode
+                      name: 'a'
+                  operator: '+'
+                  right:
+                    IdentifierNode
+                      name: 'b'
+            ReturnStmtNode
+              value:
+                IdentifierNode
+                  name: 'resultado'
+          ]
+    FunctionDefNode
+      return_type: 'inteiro'
+      name: 'maximo'
+      params: [
+        ParamNode
+          param_type: 'inteiro'
+          name: 'a'
+          is_array: False
+        ParamNode
+          param_type: 'inteiro'
+          name: 'b'
+          is_array: False
+      ]
+      body:
+        BlockNode
+          declarations: [
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarSimpleDeclNode
+                  name: 'resultado'
+              ]
+          ]
+          statements: [
+            IfStmtNode
+              condition:
+                RelationalCondNode
+                  left:
+                    IdentifierNode
+                      name: 'a'
+                  operator: '>='
+                  right:
+                    IdentifierNode
+                      name: 'b'
+              then_block:
+                BlockNode
+                  declarations: []
+                  statements: [
+                    AssignStmtNode
+                      target:
+                        IdentifierNode
+                          name: 'resultado'
+                      value:
+                        IdentifierNode
+                          name: 'a'
+                  ]
+              else_block:
+                BlockNode
+                  declarations: []
+                  statements: [
+                    AssignStmtNode
+                      target:
+                        IdentifierNode
+                          name: 'resultado'
+                      value:
+                        IdentifierNode
+                          name: 'b'
+                  ]
+            ReturnStmtNode
+              value:
+                IdentifierNode
+                  name: 'resultado'
+          ]
+    FunctionDefNode
+      return_type: 'vazio'
+      name: 'imprimirVetor'
+      params: [
+        ParamNode
+          param_type: 'inteiro'
+          name: 'v'
+          is_array: True
+        ParamNode
+          param_type: 'inteiro'
+          name: 'tamanho'
+          is_array: False
+      ]
+      body:
+        BlockNode
+          declarations: [
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarSimpleDeclNode
+                  name: 'i'
+              ]
+          ]
+          statements: [
+            AssignStmtNode
+              target:
+                IdentifierNode
+                  name: 'i'
+              value:
+                IntLiteralNode
+                  value: 0
+            WhileStmtNode
+              condition:
+                RelationalCondNode
+                  left:
+                    IdentifierNode
+                      name: 'i'
+                  operator: '<'
+                  right:
+                    IdentifierNode
+                      name: 'tamanho'
+              body:
+                BlockNode
+                  declarations: []
+                  statements: [
+                    ExprStmtNode
+                      expr:
+                        FunctionCallNode
+                          name: 'escrever'
+                          args: [
+                            ArrayAccessNode
+                              name: 'v'
+                              index:
+                                IdentifierNode
+                                  name: 'i'
+                          ]
+                          is_reserved_io: True
+                    AssignStmtNode
+                      target:
+                        IdentifierNode
+                          name: 'i'
+                      value:
+                        BinaryExprNode
+                          left:
+                            IdentifierNode
+                              name: 'i'
+                          operator: '+'
+                          right:
+                            IntLiteralNode
+                              value: 1
+                  ]
+          ]
+    FunctionDefNode
+      return_type: 'vazio'
+      name: 'principal'
+      params: []
+      body:
+        BlockNode
+          declarations: [
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarSimpleDeclNode
+                  name: 'n'
+              ]
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarSimpleDeclNode
+                  name: 'fat'
+              ]
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarSimpleDeclNode
+                  name: 's'
+              ]
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarSimpleDeclNode
+                  name: 'maior'
+              ]
+            VarDeclNode
+              var_type: 'real'
+              items: [
+                VarSimpleDeclNode
+                  name: 'valorReal'
+              ]
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarSizedArrayDeclNode
+                  name: 'numeros'
+                  size: 5
+              ]
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarSimpleDeclNode
+                  name: 'i'
+              ]
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarSimpleDeclNode
+                  name: 'total'
+              ]
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarSimpleDeclNode
+                  name: 'ot1'
+              ]
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarSimpleDeclNode
+                  name: 'ot2'
+              ]
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarSimpleDeclNode
+                  name: 'ot3'
+              ]
+            VarDeclNode
+              var_type: 'inteiro'
+              items: [
+                VarSimpleDeclNode
+                  name: 'ot4'
+              ]
+          ]
+          statements: [
+            AssignStmtNode
+              target:
+                IdentifierNode
+                  name: 'n'
+              value:
+                IntLiteralNode
+                  value: 5
+            AssignStmtNode
+              target:
+                IdentifierNode
+                  name: 'fat'
+              value:
+                FunctionCallNode
+                  name: 'fatorial'
+                  args: [
+                    IdentifierNode
+                      name: 'n'
+                  ]
+                  is_reserved_io: False
+            ExprStmtNode
+              expr:
+                FunctionCallNode
+                  name: 'escrever'
+                  args: [
+                    IdentifierNode
+                      name: 'fat'
+                  ]
+                  is_reserved_io: True
+            AssignStmtNode
+              target:
+                IdentifierNode
+                  name: 's'
+              value:
+                FunctionCallNode
+                  name: 'soma'
+                  args: [
+                    IntLiteralNode
+                      value: 10
+                    IntLiteralNode
+                      value: 20
+                  ]
+                  is_reserved_io: False
+            ExprStmtNode
+              expr:
+                FunctionCallNode
+                  name: 'escrever'
+                  args: [
+                    IdentifierNode
+                      name: 's'
+                  ]
+                  is_reserved_io: True
+            AssignStmtNode
+              target:
+                IdentifierNode
+                  name: 'maior'
+              value:
+                FunctionCallNode
+                  name: 'maximo'
+                  args: [
+                    IdentifierNode
+                      name: 'fat'
+                    IdentifierNode
+                      name: 's'
+                  ]
+                  is_reserved_io: False
+            ExprStmtNode
+              expr:
+                FunctionCallNode
+                  name: 'escrever'
+                  args: [
+                    IdentifierNode
+                      name: 'maior'
+                  ]
+                  is_reserved_io: True
+            AssignStmtNode
+              target:
+                IdentifierNode
+                  name: 'valorReal'
+              value:
+                CastExprNode
+                  target_type: 'real'
+                  expr:
+                    IdentifierNode
+                      name: 'maior'
+            ExprStmtNode
+              expr:
+                FunctionCallNode
+                  name: 'escrever'
+                  args: [
+                    IdentifierNode
+                      name: 'valorReal'
+                  ]
+                  is_reserved_io: True
+            AssignStmtNode
+              target:
+                ArrayAccessNode
+                  name: 'numeros'
+                  index:
+                    IntLiteralNode
+                      value: 0
+              value:
+                IntLiteralNode
+                  value: 50
+            AssignStmtNode
+              target:
+                ArrayAccessNode
+                  name: 'numeros'
+                  index:
+                    IntLiteralNode
+                      value: 1
+              value:
+                IntLiteralNode
+                  value: 30
+            AssignStmtNode
+              target:
+                ArrayAccessNode
+                  name: 'numeros'
+                  index:
+                    IntLiteralNode
+                      value: 2
+              value:
+                IntLiteralNode
+                  value: 80
+            AssignStmtNode
+              target:
+                ArrayAccessNode
+                  name: 'numeros'
+                  index:
+                    IntLiteralNode
+                      value: 3
+              value:
+                IntLiteralNode
+                  value: 20
+            AssignStmtNode
+              target:
+                ArrayAccessNode
+                  name: 'numeros'
+                  index:
+                    IntLiteralNode
+                      value: 4
+              value:
+                IntLiteralNode
+                  value: 40
+            ExprStmtNode
+              expr:
+                FunctionCallNode
+                  name: 'imprimirVetor'
+                  args: [
+                    IdentifierNode
+                      name: 'numeros'
+                    IntLiteralNode
+                      value: 5
+                  ]
+                  is_reserved_io: False
+            AssignStmtNode
+              target:
+                IdentifierNode
+                  name: 'total'
+              value:
+                IntLiteralNode
+                  value: 0
+            ForStmtNode
+              init:
+                AssignExprNode
+                  target:
+                    IdentifierNode
+                      name: 'i'
+                  value:
+                    IntLiteralNode
+                      value: 0
+              condition:
+                RelationalCondNode
+                  left:
+                    IdentifierNode
+                      name: 'i'
+                  operator: '<'
+                  right:
+                    IntLiteralNode
+                      value: 5
+              update:
+                AssignExprNode
+                  target:
+                    IdentifierNode
+                      name: 'i'
+                  value:
+                    BinaryExprNode
+                      left:
+                        IdentifierNode
+                          name: 'i'
+                      operator: '+'
+                      right:
+                        IntLiteralNode
+                          value: 1
+              body:
+                BlockNode
+                  declarations: []
+                  statements: [
+                    AssignStmtNode
+                      target:
+                        IdentifierNode
+                          name: 'total'
+                      value:
+                        BinaryExprNode
+                          left:
+                            IdentifierNode
+                              name: 'total'
+                          operator: '+'
+                          right:
+                            ArrayAccessNode
+                              name: 'numeros'
+                              index:
+                                IdentifierNode
+                                  name: 'i'
+                  ]
+            ExprStmtNode
+              expr:
+                FunctionCallNode
+                  name: 'escrever'
+                  args: [
+                    IdentifierNode
+                      name: 'total'
+                  ]
+                  is_reserved_io: True
+            IfStmtNode
+              condition:
+                BinaryLogicalCondNode
+                  left:
+                    RelationalCondNode
+                      left:
+                        IdentifierNode
+                          name: 'total'
+                      operator: '>'
+                      right:
+                        IntLiteralNode
+                          value: 100
+                  operator: '&&'
+                  right:
+                    RelationalCondNode
+                      left:
+                        IdentifierNode
+                          name: 'maior'
+                      operator: '>'
+                      right:
+                        IntLiteralNode
+                          value: 10
+              then_block:
+                BlockNode
+                  declarations: []
+                  statements: [
+                    ExprStmtNode
+                      expr:
+                        FunctionCallNode
+                          name: 'escrever'
+                          args: [
+                            IdentifierNode
+                              name: 'total'
+                          ]
+                          is_reserved_io: True
+                  ]
+              else_block:
+                BlockNode
+                  declarations: []
+                  statements: [
+                    ExprStmtNode
+                      expr:
+                        FunctionCallNode
+                          name: 'escrever'
+                          args: [
+                            IdentifierNode
+                              name: 'maior'
+                          ]
+                          is_reserved_io: True
+                  ]
+            AssignStmtNode
+              target:
+                IdentifierNode
+                  name: 'ot1'
+              value:
+                BinaryExprNode
+                  left:
+                    IntLiteralNode
+                      value: 2
+                  operator: '+'
+                  right:
+                    BinaryExprNode
+                      left:
+                        IntLiteralNode
+                          value: 3
+                      operator: '*'
+                      right:
+                        IntLiteralNode
+                          value: 4
+            AssignStmtNode
+              target:
+                IdentifierNode
+                  name: 'ot2'
+              value:
+                BinaryExprNode
+                  left:
+                    IdentifierNode
+                      name: 'ot1'
+                  operator: '+'
+                  right:
+                    IntLiteralNode
+                      value: 0
+            AssignStmtNode
+              target:
+                IdentifierNode
+                  name: 'ot3'
+              value:
+                BinaryExprNode
+                  left:
+                    IdentifierNode
+                      name: 'ot2'
+                  operator: '*'
+                  right:
+                    IntLiteralNode
+                      value: 1
+            AssignStmtNode
+              target:
+                IdentifierNode
+                  name: 'ot4'
+              value:
+                BinaryExprNode
+                  left:
+                    IdentifierNode
+                      name: 'ot3'
+                  operator: '*'
+                  right:
+                    IntLiteralNode
+                      value: 0
+            ExprStmtNode
+              expr:
+                FunctionCallNode
+                  name: 'escrever'
+                  args: [
+                    IdentifierNode
+                      name: 'ot1'
+                  ]
+                  is_reserved_io: True
+            ExprStmtNode
+              expr:
+                FunctionCallNode
+                  name: 'escrever'
+                  args: [
+                    IdentifierNode
+                      name: 'ot2'
+                  ]
+                  is_reserved_io: True
+            ExprStmtNode
+              expr:
+                FunctionCallNode
+                  name: 'escrever'
+                  args: [
+                    IdentifierNode
+                      name: 'ot3'
+                  ]
+                  is_reserved_io: True
+            ExprStmtNode
+              expr:
+                FunctionCallNode
+                  name: 'escrever'
+                  args: [
+                    IdentifierNode
+                      name: 'ot4'
+                  ]
+                  is_reserved_io: True
+          ]
+  ]
+
+Código intermédio TAC original:
+----------------------------------------
+0000: func fatorial:
+0001: declare n
+0002: n = getparam 0
+0003: declare resultado
+0004: resultado = 0
+0005: t1 = n <= 1
+0006: ifFalse t1 goto L1
+0007: resultado = 1
+0008: goto L2
+0009: L1:
+0010: t2 = n - 1
+0011: param t2
+0012: t3 = call fatorial, 1
+0013: t4 = n * t3
+0014: resultado = t4
+0015: L2:
+0016: return resultado
+0017: endfunc fatorial
+0018: func soma:
+0019: declare a
+0020: a = getparam 0
+0021: declare b
+0022: b = getparam 1
+0023: declare resultado
+0024: resultado = 0
+0025: t5 = a + b
+0026: resultado = t5
+0027: return resultado
+0028: endfunc soma
+0029: func maximo:
+0030: declare a
+0031: a = getparam 0
+0032: declare b
+0033: b = getparam 1
+0034: declare resultado
+0035: resultado = 0
+0036: t6 = a >= b
+0037: ifFalse t6 goto L3
+0038: resultado = a
+0039: goto L4
+0040: L3:
+0041: resultado = b
+0042: L4:
+0043: return resultado
+0044: endfunc maximo
+0045: func imprimirVetor:
+0046: declare v
+0047: v = getparam 0
+0048: declare tamanho
+0049: tamanho = getparam 1
+0050: declare i
+0051: i = 0
+0052: i = 0
+0053: L5:
+0054: t7 = i < tamanho
+0055: ifFalse t7 goto L6
+0056: t8 = v[i]
+0057: call escrever, t8
+0058: t9 = i + 1
+0059: i = t9
+0060: goto L5
+0061: L6:
+0062: endfunc imprimirVetor
+0063: func principal:
+0064: declare n
+0065: n = 0
+0066: declare fat
+0067: fat = 0
+0068: declare s
+0069: s = 0
+0070: declare maior
+0071: maior = 0
+0072: declare valorReal
+0073: valorReal = 0.0
+0074: declare numeros[5]
+0075: array_zero_init numeros, 5
+0076: declare i
+0077: i = 0
+0078: declare total
+0079: total = 0
+0080: declare ot1
+0081: ot1 = 0
+0082: declare ot2
+0083: ot2 = 0
+0084: declare ot3
+0085: ot3 = 0
+0086: declare ot4
+0087: ot4 = 0
+0088: n = 5
+0089: param n
+0090: t10 = call fatorial, 1
+0091: fat = t10
+0092: call escrever, fat
+0093: param 10
+0094: param 20
+0095: t11 = call soma, 2
+0096: s = t11
+0097: call escrever, s
+0098: param fat
+0099: param s
+0100: t12 = call maximo, 2
+0101: maior = t12
+0102: call escrever, maior
+0103: t13 = (real) maior
+0104: valorReal = t13
+0105: call escrever, valorReal
+0106: numeros[0] = 50
+0107: numeros[1] = 30
+0108: numeros[2] = 80
+0109: numeros[3] = 20
+0110: numeros[4] = 40
+0111: param numeros
+0112: param 5
+0113: call imprimirVetor, 2
+0114: total = 0
+0115: i = 0
+0116: L7:
+0117: t14 = i < 5
+0118: ifFalse t14 goto L8
+0119: t15 = numeros[i]
+0120: t16 = total + t15
+0121: total = t16
+0122: t17 = i + 1
+0123: i = t17
+0124: goto L7
+0125: L8:
+0126: call escrever, total
+0127: t19 = total > 100
+0128: ifFalse t19 goto L11
+0129: t20 = maior > 10
+0130: ifFalse t20 goto L11
+0131: t18 = 1
+0132: goto L12
+0133: L11:
+0134: t18 = 0
+0135: L12:
+0136: ifFalse t18 goto L9
+0137: call escrever, total
+0138: goto L10
+0139: L9:
+0140: call escrever, maior
+0141: L10:
+0142: t21 = 3 * 4
+0143: t22 = 2 + t21
+0144: ot1 = t22
+0145: t23 = ot1 + 0
+0146: ot2 = t23
+0147: t24 = ot2 * 1
+0148: ot3 = t24
+0149: t25 = ot3 * 0
+0150: ot4 = t25
+0151: call escrever, ot1
+0152: call escrever, ot2
+0153: call escrever, ot3
+0154: call escrever, ot4
+0155: endfunc principal
+
+Código intermédio TAC otimizado:
+----------------------------------------
+0000: func fatorial:
+0001: declare n
+0002: n = getparam 0
+0003: declare resultado
+0004: resultado = 0
+0005: t1 = n <= 1
+0006: ifFalse t1 goto L1
+0007: resultado = 1
+0008: goto L2
+0009: L1:
+0010: t2 = n - 1
+0011: param t2
+0012: t3 = call fatorial, 1
+0013: t4 = n * t3
+0014: resultado = t4
+0015: L2:
+0016: return resultado
+0017: endfunc fatorial
+0018: func soma:
+0019: declare a
+0020: a = getparam 0
+0021: declare b
+0022: b = getparam 1
+0023: declare resultado
+0024: resultado = 0
+0025: t5 = a + b
+0026: resultado = t5
+0027: return t5
+0028: endfunc soma
+0029: func maximo:
+0030: declare a
+0031: a = getparam 0
+0032: declare b
+0033: b = getparam 1
+0034: declare resultado
+0035: resultado = 0
+0036: t6 = a >= b
+0037: ifFalse t6 goto L3
+0038: resultado = a
+0039: goto L4
+0040: L3:
+0041: resultado = b
+0042: L4:
+0043: return resultado
+0044: endfunc maximo
+0045: func imprimirVetor:
+0046: declare v
+0047: v = getparam 0
+0048: declare tamanho
+0049: tamanho = getparam 1
+0050: declare i
+0051: i = 0
+0052: i = 0
+0053: L5:
+0054: t7 = i < tamanho
+0055: ifFalse t7 goto L6
+0056: t8 = v[i]
+0057: call escrever, t8
+0058: t9 = i + 1
+0059: i = t9
+0060: goto L5
+0061: L6:
+0062: endfunc imprimirVetor
+0063: func principal:
+0064: declare n
+0065: n = 0
+0066: declare fat
+0067: fat = 0
+0068: declare s
+0069: s = 0
+0070: declare maior
+0071: maior = 0
+0072: declare valorReal
+0073: valorReal = 0.0
+0074: declare numeros[5]
+0075: array_zero_init numeros, 5
+0076: declare i
+0077: i = 0
+0078: declare total
+0079: total = 0
+0080: declare ot1
+0081: ot1 = 0
+0082: declare ot2
+0083: ot2 = 0
+0084: declare ot3
+0085: ot3 = 0
+0086: declare ot4
+0087: ot4 = 0
+0088: n = 5
+0089: param 5
+0090: t10 = call fatorial, 1
+0091: fat = t10
+0092: call escrever, fat
+0093: param 10
+0094: param 20
+0095: t11 = call soma, 2
+0096: s = t11
+0097: call escrever, s
+0098: param t10
+0099: param t11
+0100: t12 = call maximo, 2
+0101: maior = t12
+0102: call escrever, maior
+0103: t13 = (real) t12
+0104: valorReal = t13
+0105: call escrever, valorReal
+0106: numeros[0] = 50
+0107: numeros[1] = 30
+0108: numeros[2] = 80
+0109: numeros[3] = 20
+0110: numeros[4] = 40
+0111: param numeros
+0112: param 5
+0113: call imprimirVetor, 2
+0114: total = 0
+0115: i = 0
+0116: L7:
+0117: t14 = i < 5
+0118: ifFalse t14 goto L8
+0119: t15 = numeros[i]
+0120: t16 = total + t15
+0121: total = t16
+0122: t17 = i + 1
+0123: i = t17
+0124: goto L7
+0125: L8:
+0126: call escrever, total
+0127: t19 = total > 100
+0128: ifFalse t19 goto L11
+0129: t20 = maior > 10
+0130: ifFalse t20 goto L11
+0131: goto L12
+0132: L11:
+0133: t18 = 0
+0134: L12:
+0135: ifFalse t18 goto L9
+0136: call escrever, total
+0137: goto L10
+0138: L9:
+0139: call escrever, maior
+0140: L10:
+0141: ot1 = 14
+0142: ot2 = 14
+0143: ot3 = 14
+0144: ot4 = 0
+0145: call escrever, ot1
+0146: call escrever, ot2
+0147: call escrever, ot3
+0148: call escrever, ot4
+0149: endfunc principal

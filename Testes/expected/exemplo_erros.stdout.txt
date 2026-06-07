@@ -1,0 +1,25 @@
+Foram encontrados erros:
+[LÉXICO/SINTÁTICO] linha 9, coluna 0: Palavra-chave C 'int' detetada. Em MOCP use 'inteiro'.
+[LÉXICO/SINTÁTICO] linha 9, coluna 10: Palavra-chave C 'int' detetada. Em MOCP use 'inteiro'.
+[LÉXICO/SINTÁTICO] linha 9, coluna 17: Palavra-chave C 'int' detetada. Em MOCP use 'inteiro'.
+[LÉXICO/SINTÁTICO] linha 12, coluna 0: Palavra-chave C 'void' detetada. Em MOCP use 'vazio'.
+[LÉXICO/SINTÁTICO] linha 12, coluna 5: Palavra-chave C 'main' detetada. Em MOCP use 'principal'.
+[LÉXICO/SINTÁTICO] linha 13, coluna 4: Palavra-chave C 'int' detetada. Em MOCP use 'inteiro'.
+[LÉXICO/SINTÁTICO] linha 14, coluna 4: Palavra-chave C 'int' detetada. Em MOCP use 'inteiro'.
+[LÉXICO/SINTÁTICO] linha 15, coluna 4: Palavra-chave C 'double' detetada. Em MOCP use 'real'.
+[LÉXICO/SINTÁTICO] linha 18, coluna 5: Operador '++' não é suportado em MOCP. Use i = i + 1.
+[LÉXICO/SINTÁTICO] linha 21, coluna 6: Operador '+=' não é suportado em MOCP. Use x = x + valor.
+[LÉXICO/SINTÁTICO] linha 24, coluna 4: Palavra-chave C 'if' detetada. Em MOCP use 'se'.
+[LÉXICO/SINTÁTICO] linha 25, coluna 21: Palavra-chave C 'double' detetada. Em MOCP use 'real'.
+[LÉXICO/SINTÁTICO] linha 26, coluna 6: Palavra-chave C 'else' detetada. Em MOCP use 'senao'.
+[LÉXICO/SINTÁTICO] linha 27, coluna 21: Palavra-chave C 'double' detetada. Em MOCP use 'real'.
+[LÉXICO/SINTÁTICO] linha 31, coluna 4: Palavra-chave C 'while' detetada. Em MOCP use 'enquanto'.
+[LÉXICO/SINTÁTICO] linha 32, coluna 9: Operador '--' não é suportado em MOCP. Use i = i - 1.
+[LÉXICO/SINTÁTICO] linha 37, coluna 4: Palavra-chave C 'for' detetada. Em MOCP use 'para'.
+[LÉXICO/SINTÁTICO] linha 37, coluna 8: Palavra-chave C 'int' detetada. Em MOCP use 'inteiro'.
+[LÉXICO/SINTÁTICO] linha 37, coluna 27: Operador '++' não é suportado em MOCP. Use i = i + 1.
+[LÉXICO/SINTÁTICO] linha 42, coluna 4: Palavra-chave C 'return' detetada. Em MOCP use 'retornar'.
+[LÉXICO/SINTÁTICO] linha 46, coluna 0: Palavra-chave C 'void' detetada. Em MOCP use 'vazio'.
+[LÉXICO/SINTÁTICO] linha 46, coluna 11: Palavra-chave C 'int' detetada. Em MOCP use 'inteiro'.
+[LÉXICO/SINTÁTICO] linha 46, coluna 18: Palavra-chave C 'int' detetada. Em MOCP use 'inteiro'.
+[LÉXICO/SINTÁTICO] linha 47, coluna 4: Palavra-chave C 'int' detetada. Em MOCP use 'inteiro'.
