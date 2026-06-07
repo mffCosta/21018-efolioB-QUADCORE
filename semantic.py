@@ -306,9 +306,11 @@ class SemanticAnalyzer:
 
         self.visit_block(func.body, create_scope=False)
 
-        if func.return_type != "vazio" and not self._block_has_return(func.body):
+        if func.return_type != "vazio" and not self._block_always_returns(func.body):
             raise SemanticError(
-                f"A função '{func.name}' deve conter pelo menos uma instrução 'retornar'."
+                f"A função '{func.name}' (tipo de retorno '{func.return_type}') "
+                "pode terminar sem executar 'retornar' em todos os caminhos de "
+                "execução."
             )
 
         self.symbols.exit_scope()
@@ -327,35 +329,44 @@ class SemanticAnalyzer:
         if create_scope:
             self.symbols.exit_scope()
 
-    def _block_has_return(self, block: BlockNode) -> bool:
+    def _block_always_returns(self, block: BlockNode) -> bool:
+        """
+        Analise "all paths return": indica se TODOS os caminhos de execucao do
+        bloco terminam num 'retornar'. Basta que uma das suas instrucoes
+        garanta retorno para o bloco o garantir (o codigo seguinte seria
+        inalcancavel).
+        """
         for stmt in block.statements:
-            if isinstance(stmt, ReturnStmtNode):
+            if self._stmt_always_returns(stmt):
                 return True
 
-            if isinstance(stmt, BlockNode) and self._block_has_return(stmt):
-                return True
+        return False
 
-            if isinstance(stmt, IfStmtNode):
-                then_has = self._block_has_return(stmt.then_block)
-                else_has = (
-                    self._block_has_return(stmt.else_block)
-                    if stmt.else_block is not None
-                    else False
-                )
-                if then_has and else_has:
-                    return True
+    def _stmt_always_returns(self, stmt) -> bool:
+        """
+        Indica se uma instrucao garante, por si so, a execucao de um 'retornar'
+        em qualquer caminho.
+        """
+        if isinstance(stmt, ReturnStmtNode):
+            return True
 
-            # Um 'retornar' dentro do corpo de um ciclo conta como retorno
-            # existente. O ciclo pode nao executar, mas esta verificacao
-            # destina-se apenas a confirmar que a funcao tem pelo menos um
-            # 'retornar', evitando falsos positivos.
-            if isinstance(stmt, WhileStmtNode) and self._block_has_return(stmt.body):
-                return True
+        if isinstance(stmt, BlockNode):
+            return self._block_always_returns(stmt)
 
-            if isinstance(stmt, ForStmtNode) and stmt.body is not None \
-                    and self._block_has_return(stmt.body):
-                return True
+        # Um 'se' so garante retorno se tiver ramo 'senao' e ambos os ramos
+        # garantirem retorno. Sem 'senao', o caminho em que a condicao e falsa
+        # nao executa qualquer 'retornar'.
+        if isinstance(stmt, IfStmtNode):
+            if stmt.else_block is None:
+                return False
+            return (
+                self._block_always_returns(stmt.then_block)
+                and self._block_always_returns(stmt.else_block)
+            )
 
+        # Ciclos nao garantem retorno: o corpo pode nunca executar (a condicao
+        # pode ser falsa a entrada), pelo que um 'retornar' la dentro nao cobre
+        # todos os caminhos.
         return False
 
     # -----------------------------------------------------
