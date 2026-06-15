@@ -1,3 +1,6 @@
 __pycache__/
 *.pyc
 .antlr/
+
+# Simulador MARS (binario de terceiros; obter localmente, nao versionar)
+Mars*.jar
