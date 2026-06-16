@@ -175,9 +175,6 @@ class MIPSGenerator:
         for instr in pre_func:
             if instr.op == "declare":
                 self.global_scalars.setdefault(instr.result, "0")
-            elif instr.op == "assign" and instr.result in self.global_scalars:
-                if is_int_literal(instr.arg1):
-                    self.global_scalars[instr.result] = instr.arg1
             elif instr.op == "array_decl":
                 if instr.arg1 == "?":
                     raise MIPSGenerationError(
@@ -185,6 +182,27 @@ class MIPSGenerator:
                         "ainda não suportado no gerador MIPS"
                     )
                 self.global_arrays[instr.result] = int(instr.arg1)
+            elif instr.op == "assign" and instr.result in self.global_scalars:
+                # Só inicializadores constantes (literais inteiros) cabem no .data.
+                if not is_int_literal(instr.arg1):
+                    raise MIPSGenerationError(
+                        f"inicialização do global '{instr.result}' com valor "
+                        f"não-constante ('{instr.arg1}') ainda não suportada no "
+                        "gerador MIPS"
+                    )
+                self.global_scalars[instr.result] = instr.arg1
+            elif instr.op in ("array_zero_init", "nop"):
+                # 'array_zero_init' de um global é redundante (o '.space' do .data
+                # já fica a zero) e 'nop' não gera código: ambos são ignorados.
+                pass
+            else:
+                # Defensivo: nunca deixar cair silenciosamente uma instrução de
+                # escopo global que não saibamos materializar em dados estáticos.
+                raise MIPSGenerationError(
+                    f"instrução TAC '{instr.op}' no escopo global ainda não "
+                    "suportada pelo gerador MIPS (apenas declarações e "
+                    "inicializações constantes)"
+                )
 
     def _collect_strings(self, instructions: List[TACInstruction]) -> None:
         for instr in instructions:
@@ -213,7 +231,7 @@ class MIPSGenerator:
             # 'literal' já vem com aspas e escapes válidos do TAC.
             self.lines.append(f"{label}: .asciiz {literal}")
 
-        # Cadeia auxiliar para a mudança de linha do 'escrever'.
+        # Linha em branco a separar visualmente os dados do código.
         self.lines.append("")
 
     # =====================================================
@@ -487,7 +505,12 @@ class MIPSGenerator:
             self._ins("li $v0, 11")    # print_char
             self._ins("syscall")
         elif func == "escrevers":
-            label = self.string_pool[value]
+            label = self.string_pool.get(value)
+            if label is None:
+                raise MIPSGenerationError(
+                    f"'escrevers' requer uma cadeia literal conhecida; "
+                    f"recebeu '{value}'"
+                )
             self._ins(f"la $a0, {label}")
             self._ins("li $v0, 4")     # print_string
             self._ins("syscall")
