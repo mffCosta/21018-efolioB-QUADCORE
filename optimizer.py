@@ -294,41 +294,87 @@ class TACOptimizer:
     # =====================================================
 
     def dead_code_elimination(self, program: TACProgram) -> TACProgram:
-        live: Set[str] = set()
-        kept_reversed: List[TACInstruction] = []
+        """
+        Elimina definições mortas de temporários, com análise de vivacidade
+        SENSÍVEL AO FLUXO DE CONTROLO.
+
+        Uma versão anterior fazia um único passe linear para trás, o que estava
+        ERRADO na presença de saltos: no losango de curto-circuito de '&&'/'||'
+        (t=1; goto FIM; L: t=0; FIM: ...) o ramo 't=0' apagava 't' do conjunto
+        de vivos e o 'goto' não repunha a vivacidade vinda da etiqueta de junção,
+        pelo que a atribuição 't=1' era apagada e a expressão lógica ficava
+        miscompilada. Aqui calcula-se a vivacidade por ponto-fixo sobre o grafo
+        de fluxo (cada salto/etiqueta liga os pontos certos), o que torna a
+        eliminação correta para qualquer estrutura de controlo.
+        """
+        instrs = program.instructions
+        n = len(instrs)
         temporaries = program.temporaries
 
-        for instr in reversed(program.instructions):
-            defined = instr.defines()
-            used = instr.uses()
+        if n == 0:
+            return TACProgram([], temporaries=set(temporaries))
 
-            if instr.has_side_effect():
-                kept_reversed.append(instr)
-                live.update(used)
+        # Índice de cada etiqueta (são únicas em todo o programa).
+        label_index: Dict[str, int] = {
+            instr.label: i for i, instr in enumerate(instrs) if instr.op == "label"
+        }
 
-                if defined:
-                    live.discard(defined)
+        def successors(i: int) -> List[int]:
+            instr = instrs[i]
+            op = instr.op
+            if op == "goto":
+                tgt = label_index.get(instr.label)
+                return [tgt] if tgt is not None else []
+            if op in ("if", "ifFalse"):
+                succ: List[int] = []
+                if i + 1 < n:
+                    succ.append(i + 1)
+                tgt = label_index.get(instr.label)
+                if tgt is not None:
+                    succ.append(tgt)
+                return succ
+            # 'return' e 'func_end' não têm continuação; uma função nunca cai na
+            # seguinte (não há aresta de fluxo entre funções).
+            if op in ("return", "func_end"):
+                return []
+            return [i + 1] if i + 1 < n else []
 
-                continue
+        defs = [instr.defines() for instr in instrs]
+        uses = [instr.uses() for instr in instrs]
+        live_in: List[Set[str]] = [set() for _ in range(n)]
+        live_out: List[Set[str]] = [set() for _ in range(n)]
 
-            if defined is None:
-                kept_reversed.append(instr)
-                live.update(used)
-                continue
+        # Ponto-fixo de vivacidade (para trás).
+        changed = True
+        while changed:
+            changed = False
+            for i in range(n - 1, -1, -1):
+                out: Set[str] = set()
+                for s in successors(i):
+                    out |= live_in[s]
+                new_in = uses[i] | (out - ({defs[i]} if defs[i] else set()))
+                if out != live_out[i] or new_in != live_in[i]:
+                    live_out[i] = out
+                    live_in[i] = new_in
+                    changed = True
 
-            # Só se eliminam temporários gerados pelo compilador (registados
-            # em program.temporaries) que não voltam a ser usados. Variáveis
-            # do utilizador são sempre preservadas, ainda que tenham um nome
-            # com o padrão de um temporário.
-            if defined in live or defined not in temporaries:
-                kept_reversed.append(instr)
-                live.discard(defined)
-                live.update(used)
-            else:
+        # Remove definições mortas: só temporários do compilador, sem efeitos
+        # laterais e não vivos à saída da instrução. Variáveis do utilizador
+        # preservam-se sempre.
+        kept: List[TACInstruction] = []
+        for i, instr in enumerate(instrs):
+            defined = defs[i]
+            if (
+                not instr.has_side_effect()
+                and defined is not None
+                and defined in temporaries
+                and defined not in live_out[i]
+            ):
                 self.changed = True
+                continue
+            kept.append(instr)
 
-        kept_reversed.reverse()
-        return TACProgram(kept_reversed, temporaries=set(temporaries))
+        return TACProgram(kept, temporaries=set(temporaries))
 
     # =====================================================
     # 4. Remoção de NOPs
@@ -452,6 +498,11 @@ class TACOptimizer:
             return None
 
     def _format_number(self, value: float) -> str:
+        # Esta função só formata RESULTADOS REAIS (dobragem de '+ - * /' reais,
+        # simétrico real e cast para real). Tem de preservar a marca de real —
+        # o ponto decimal — mesmo quando o valor é inteiro (ex.: 3.0 - 2.0 = 1.0).
+        # Caso contrário, "1.0" colapsaria para "1" e o back-end imprimi-lo-ia
+        # como inteiro (print_int) em vez de real (print_float).
         if value.is_integer():
-            return str(int(value))
-        return str(value)
+            return f"{int(value)}.0"
+        return repr(value)
