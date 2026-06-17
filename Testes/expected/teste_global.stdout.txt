@@ -1052,22 +1052,23 @@ Código intermédio TAC otimizado:
 0128: ifFalse t19 goto L11
 0129: t20 = maior > 10
 0130: ifFalse t20 goto L11
-0131: goto L12
-0132: L11:
-0133: t18 = 0
-0134: L12:
-0135: ifFalse t18 goto L9
-0136: call escrever, total
-0137: goto L10
-0138: L9:
-0139: call escrever, maior
-0140: L10:
-0141: ot1 = 14
-0142: ot2 = 14
-0143: ot3 = 14
-0144: ot4 = 0
-0145: call escrever, ot1
-0146: call escrever, ot2
-0147: call escrever, ot3
-0148: call escrever, ot4
-0149: endfunc principal
+0131: t18 = 1
+0132: goto L12
+0133: L11:
+0134: t18 = 0
+0135: L12:
+0136: ifFalse t18 goto L9
+0137: call escrever, total
+0138: goto L10
+0139: L9:
+0140: call escrever, maior
+0141: L10:
+0142: ot1 = 14
+0143: ot2 = 14
+0144: ot3 = 14
+0145: ot4 = 0
+0146: call escrever, ot1
+0147: call escrever, ot2
+0148: call escrever, ot3
+0149: call escrever, ot4
+0150: endfunc principal

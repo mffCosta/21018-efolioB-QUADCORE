@@ -531,44 +531,47 @@ Código intermédio TAC otimizado:
 0044: if t13 goto L3
 0045: t14 = n < 0
 0046: if t14 goto L3
-0047: goto L4
-0048: L3:
-0049: t12 = 1
-0050: L4:
-0051: ifFalse t12 goto L1
-0052: call escrever, m
-0053: L1:
-0054: t15 = m > 5
-0055: t16 = t15 == 0
-0056: ifFalse t16 goto L5
-0057: call escrever, n
-0058: L5:
-0059: t19 = m > 0
-0060: ifFalse t19 goto L11
-0061: t20 = n > 0
-0062: ifFalse t20 goto L11
-0063: goto L12
-0064: L11:
-0065: t18 = 0
-0066: L12:
-0067: if t18 goto L9
-0068: t21 = soma > 100
-0069: if t21 goto L9
-0070: goto L10
-0071: L9:
-0072: t17 = 1
-0073: L10:
-0074: ifFalse t17 goto L7
-0075: call escrever, soma
-0076: L7:
-0077: call escreverc, c
-0078: call escreverv, v
-0079: call escrevers, s
-0080: t22 = g > 0
-0081: ifFalse t22 goto L13
-0082: return
-0083: L13:
-0084: param g
-0085: t23 = call dobro, 1
-0086: call escrever, t23
-0087: endfunc principal
+0047: t12 = 0
+0048: goto L4
+0049: L3:
+0050: t12 = 1
+0051: L4:
+0052: ifFalse t12 goto L1
+0053: call escrever, m
+0054: L1:
+0055: t15 = m > 5
+0056: t16 = t15 == 0
+0057: ifFalse t16 goto L5
+0058: call escrever, n
+0059: L5:
+0060: t19 = m > 0
+0061: ifFalse t19 goto L11
+0062: t20 = n > 0
+0063: ifFalse t20 goto L11
+0064: t18 = 1
+0065: goto L12
+0066: L11:
+0067: t18 = 0
+0068: L12:
+0069: if t18 goto L9
+0070: t21 = soma > 100
+0071: if t21 goto L9
+0072: t17 = 0
+0073: goto L10
+0074: L9:
+0075: t17 = 1
+0076: L10:
+0077: ifFalse t17 goto L7
+0078: call escrever, soma
+0079: L7:
+0080: call escreverc, c
+0081: call escreverv, v
+0082: call escrevers, s
+0083: t22 = g > 0
+0084: ifFalse t22 goto L13
+0085: return
+0086: L13:
+0087: param g
+0088: t23 = call dobro, 1
+0089: call escrever, t23
+0090: endfunc principal
