@@ -11,29 +11,42 @@ Linguagem final escolhida : MIPS (assembly de 32 bits).
 Simulador para testar      : MARS  (MIPS Assembler and Runtime Simulator).
 
 ------------------------------------------------------------------------------
-ESTADO DESTA ITERAÇÃO  (subconjunto INTEIRO completo)
+ESTADO DESTA ITERAÇÃO  (linguagem MOCP completa)
 ------------------------------------------------------------------------------
-Suportado e testado de ponta a ponta:
+Suportado e testado de ponta a ponta (no simulador MARS):
   - funções, convenção de chamadas e recursão  (func/endfunc, getparam, param,
     call, return)  -> bastidor de pilha com $fp;
   - escalares inteiros, aritmética (+ - * / %), simétrico, relacionais;
+  - REAIS (vírgula flutuante, precisão simples): aritmética (+ - * /), simétrico,
+    comparações relacionais, conversões inteiro<->real (int_to_real/real_to_int),
+    cast do utilizador e escrita (escrever de um real -> print_float);
   - controlo de fluxo (label, goto, if, ifFalse);
-  - vetores de inteiros: declaração local, inicialização a 0, leitura/escrita
-    indexada e PASSAGEM POR REFERÊNCIA como parâmetro;
-  - E/S inteira: escrever, escreverc, escrevers, ler, lerc.
+  - vetores (inteiros e reais): declaração local, inicialização a 0, leitura/
+    escrita indexada e PASSAGEM POR REFERÊNCIA como parâmetro;
+  - vetores de dimensão determinada em execução (array_decl '?'): a ranhura
+    guarda um PONTEIRO para memória dinâmica (sbrk);
+  - E/S completa: escrever, escreverc, escrevers, escreverv, ler, lerc, lers.
 
-Deixado explicitamente para as próximas iterações (levanta erro claro):
-  - reais / vírgula flutuante (int_to_real, real_to_int, operações e E/S reais);
-  - cast do utilizador;
-  - escreverv (escrever vetor) e lers (ler string);
-  - vetores de dimensão determinada em execução (array_decl com tamanho '?').
+ESTRATÉGIA PARA OS REAIS
+  Um 'real' MOCP é de precisão simples (32 bits) e cada valor já ocupa uma
+  palavra. Por isso os reais circulam como PADRÃO DE BITS pela via inteira
+  habitual (lw/sw, $v0, pilha): só se usam registos de vírgula flutuante
+  ($f*) nos pontos onde há mesmo cálculo real (aritmética, comparação,
+  conversão e escrita). Um passe de inferência de tipos sobre o TAC decide,
+  em cada instrução, se os operandos são inteiros ou reais (o TAC já traz as
+  conversões int_to_real/real_to_int materializadas, o que torna a inferência
+  local e fiável).
 
 ------------------------------------------------------------------------------
 CONVENÇÃO DE E/S DEFINIDA POR NÓS (o enunciado não a fixa)
 ------------------------------------------------------------------------------
-  escrever(n)   -> imprime o inteiro seguido de mudança de linha '\\n';
+  escrever(n)   -> imprime o inteiro (ou o real) seguido de mudança de linha;
   escreverc(c)  -> imprime um único caráter (código ASCII), sem mudança de linha;
-  escrevers(s)  -> imprime a cadeia tal e qual, sem mudança de linha.
+  escrevers(s)  -> imprime a cadeia tal e qual, sem mudança de linha
+                   (cadeia literal ou inteiro[] terminado em 0, ex.: lers());
+  escreverv(v)  -> imprime cada elemento do vetor seguido de '\\n' (como
+                   'escrever' aplicado a cada elemento; dimensão estática);
+  lers()        -> lê uma linha e devolve-a como inteiro[] terminado em 0.
 
 ------------------------------------------------------------------------------
 CONVENÇÃO DE CHAMADAS (bastidor de pilha)
@@ -56,13 +69,16 @@ operandos para registos, calcula e volta a guardar em memória. É simples e
 correto (a recursão funciona porque cada chamada tem o seu próprio bastidor).
 """
 
-from typing import Dict, List, Optional, Tuple
+import struct
+from typing import Dict, List, Optional, Set, Tuple
 
 from tac import (
     TACProgram,
     TACInstruction,
     is_int_literal,
+    is_real_literal,
     is_string_literal,
+    is_variable_like,
 )
 
 
@@ -112,10 +128,19 @@ class MIPSGenerator:
         self.string_pool: Dict[str, str] = {}   # texto-com-aspas -> rótulo .data
         self.global_scalars: Dict[str, str] = {}  # nome -> valor inicial textual
         self.global_arrays: Dict[str, int] = {}   # nome -> tamanho
+        self.global_reals: Set[str] = set()        # globais escalares de tipo real
         self.func_names: set = set()
         self.frame: Optional[_Frame] = None
         self.pending_params: List[str] = []
         self._helper_label_counter = 0
+
+        # Inferência de tipos (inteiro vs real) sobre o TAC.
+        self.func_return_real: Dict[str, bool] = {}        # função -> devolve real?
+        self._per_func_real_scalars: Dict[str, Set[str]] = {}
+        self._per_func_real_arrays: Dict[str, Set[str]] = {}
+        self.real_scalars: Set[str] = set()    # nomes reais na função atual
+        self.real_arrays: Set[str] = set()     # vetores de elementos reais (função atual)
+        self._lers_helper_needed = False       # gerar a rotina de runtime __lers?
 
     # =====================================================
     # API principal
@@ -130,6 +155,13 @@ class MIPSGenerator:
         # Recolher globais (escalares/vetores) e strings.
         self._collect_globals(pre_func)
         self._collect_strings(instructions)
+
+        # Inferir, por função, que nomes guardam reais (decide inteiro vs $f*).
+        self._infer_types(functions)
+
+        # lers() precisa de uma rotina de runtime e de um buffer de leitura: é
+        # decidido aqui (antes do .data) para reservar o buffer no segmento certo.
+        self._lers_helper_needed = any(instr.op == "reads" for instr in instructions)
 
         self._emit_data_segment()
         self._emit_text_segment(functions)
@@ -183,14 +215,19 @@ class MIPSGenerator:
                     )
                 self.global_arrays[instr.result] = int(instr.arg1)
             elif instr.op == "assign" and instr.result in self.global_scalars:
-                # Só inicializadores constantes (literais inteiros) cabem no .data.
-                if not is_int_literal(instr.arg1):
+                # Só inicializadores constantes (literais inteiros ou reais) cabem
+                # no .data. Os reais marcam-se para serem emitidos como '.float'.
+                if is_int_literal(instr.arg1):
+                    self.global_scalars[instr.result] = instr.arg1
+                elif is_real_literal(instr.arg1):
+                    self.global_scalars[instr.result] = instr.arg1
+                    self.global_reals.add(instr.result)
+                else:
                     raise MIPSGenerationError(
                         f"inicialização do global '{instr.result}' com valor "
                         f"não-constante ('{instr.arg1}') ainda não suportada no "
                         "gerador MIPS"
                     )
-                self.global_scalars[instr.result] = instr.arg1
             elif instr.op in ("array_zero_init", "nop"):
                 # 'array_zero_init' de um global é redundante (o '.space' do .data
                 # já fica a zero) e 'nop' não gera código: ambos são ignorados.
@@ -212,6 +249,127 @@ class MIPSGenerator:
                     self.string_pool[operand] = label
 
     # =====================================================
+    # Inferência de tipos (inteiro vs real)
+    # =====================================================
+    #
+    # O TAC não anota tipos, mas o gerador de TAC já materializa as conversões
+    # numéricas (int_to_real / real_to_int) em todas as fronteiras (atribuição,
+    # retorno, argumentos, promoção em expressões mistas). Isso torna cada
+    # instrução localmente coerente e permite descobrir, por ponto-fixo, que
+    # nomes guardam reais. Só precisamos desta distinção nos sítios onde o
+    # cálculo difere mesmo entre inteiro e real (aritmética, comparação,
+    # conversão e escrita); cópias, vetores e passagem de argumentos movem 32
+    # bits e funcionam igual para ambos.
+
+    def _infer_types(self, functions: List[Tuple[str, List[TACInstruction]]]) -> None:
+        self.func_return_real = {name: False for name, _ in functions}
+
+        # Ponto-fixo externo: o tipo de retorno de uma função influencia o tipo
+        # do destino de 'call' (e logo a inferência de quem a chama).
+        for _ in range(len(functions) + 2):
+            changed = False
+            for name, body in functions:
+                rscal, rarr = self._infer_function_reals(body)
+                self._per_func_real_scalars[name] = rscal
+                self._per_func_real_arrays[name] = rarr
+
+                ret_real = any(
+                    instr.op == "return"
+                    and instr.arg1 is not None
+                    and self._name_is_real(instr.arg1, rscal)
+                    for instr in body
+                )
+                if ret_real != self.func_return_real.get(name, False):
+                    self.func_return_real[name] = ret_real
+                    changed = True
+            if not changed:
+                break
+
+    def _name_is_real(self, name: Optional[str], real_scalars: Set[str]) -> bool:
+        if name is None:
+            return False
+        if is_real_literal(name):
+            return True
+        if name in self.global_reals:
+            return True
+        return name in real_scalars
+
+    def _infer_function_reals(
+        self, body: List[TACInstruction]
+    ) -> Tuple[Set[str], Set[str]]:
+        """Devolve (nomes_reais, vetores_de_elementos_reais) para uma função."""
+        real: Set[str] = set()
+        arr_real: Set[str] = set()
+
+        def is_real(x: Optional[str]) -> bool:
+            return self._name_is_real(x, real)
+
+        changed = True
+        while changed:
+            changed = False
+
+            def mark(n: Optional[str]) -> None:
+                nonlocal changed
+                if n is not None and is_variable_like(n) and n not in real:
+                    real.add(n)
+                    changed = True
+
+            def mark_arr(a: Optional[str]) -> None:
+                nonlocal changed
+                if a is not None and is_variable_like(a) and a not in arr_real:
+                    arr_real.add(a)
+                    changed = True
+
+            for instr in body:
+                op = instr.op
+                if op == "int_to_real":
+                    mark(instr.result)              # destino é real
+                elif op == "real_to_int":
+                    mark(instr.arg1)                # origem é real (destino é int)
+                elif op == "cast":
+                    if instr.arg2 == "real":
+                        mark(instr.result)
+                elif op == "assign":
+                    if is_real(instr.arg1):
+                        mark(instr.result)
+                    if is_real(instr.result):
+                        mark(instr.arg1)
+                elif op in ("+", "-", "*", "/"):
+                    # O gerador promove operandos mistos: os três têm o mesmo
+                    # tipo. ('%' exige inteiros e nunca é real.)
+                    if is_real(instr.arg1) or is_real(instr.arg2) or is_real(instr.result):
+                        mark(instr.result)
+                        mark(instr.arg1)
+                        mark(instr.arg2)
+                elif op == "uminus":
+                    if is_real(instr.arg1):
+                        mark(instr.result)
+                    if is_real(instr.result):
+                        mark(instr.arg1)
+                # As relações NÃO propagam: o resultado é inteiro (0/1) e os
+                # operandos podem ser de tipos diferentes (o gerador não promove
+                # em contexto de condição). Cada operando mantém o seu tipo.
+                elif op == "array_load":            # result = arg1[arg2]
+                    if instr.arg1 in arr_real:
+                        mark(instr.result)
+                    if is_real(instr.result):
+                        mark_arr(instr.arg1)
+                elif op in ("array_store", "array_init"):   # result[arg1] = arg2
+                    if is_real(instr.arg2):
+                        mark_arr(instr.result)
+                    if instr.result in arr_real:
+                        mark(instr.arg2)
+                elif op == "call":                  # result = call arg1, arg2
+                    if instr.result is not None and self.func_return_real.get(instr.arg1):
+                        mark(instr.result)
+
+        return real, arr_real
+
+    def _is_real(self, operand: Optional[str]) -> bool:
+        """Operando real no contexto da função a ser gerada agora?"""
+        return self._name_is_real(operand, self.real_scalars)
+
+    # =====================================================
     # Segmento de dados
     # =====================================================
 
@@ -222,7 +380,12 @@ class MIPSGenerator:
         self.lines.append(".data")
 
         for name, value in self.global_scalars.items():
-            self.lines.append(f"g_{name}: .word {value}")
+            if name in self.global_reals:
+                # '.float' guarda o valor em IEEE-754 de precisão simples; lido
+                # depois como 32 bits crus (lw) ou como real (lwc1).
+                self.lines.append(f"g_{name}: .float {value}")
+            else:
+                self.lines.append(f"g_{name}: .word {value}")
 
         for name, size in self.global_arrays.items():
             self.lines.append(f"g_{name}: .space {4 * size}")
@@ -230,6 +393,11 @@ class MIPSGenerator:
         for literal, label in self.string_pool.items():
             # 'literal' já vem com aspas e escapes válidos do TAC.
             self.lines.append(f"{label}: .asciiz {literal}")
+
+        if self._lers_helper_needed:
+            # Buffer de bytes onde lers() lê a linha (via read_string) antes de a
+            # expandir para inteiro[].
+            self.lines.append("__lers_buf: .space 1024")
 
         # Linha em branco a separar visualmente os dados do código.
         self.lines.append("")
@@ -258,8 +426,14 @@ class MIPSGenerator:
         for name, body in functions:
             self._emit_function(name, body)
 
+        # Rotinas de runtime usadas pelo código gerado (emitidas uma só vez).
+        if self._lers_helper_needed:
+            self._emit_lers_helper()
+
     def _emit_function(self, name: str, body: List[TACInstruction]) -> None:
         self.frame = self._analyze_frame(body)
+        self.real_scalars = self._per_func_real_scalars.get(name, set())
+        self.real_arrays = self._per_func_real_arrays.get(name, set())
         self.pending_params = []
 
         frame_size = self.frame.frame_size
@@ -298,12 +472,13 @@ class MIPSGenerator:
         for instr in body:
             if instr.op == "array_decl":
                 if instr.arg1 == "?":
-                    raise MIPSGenerationError(
-                        f"vetor '{instr.result}' de dimensão determinada em execução "
-                        "('?') ainda não suportado no gerador MIPS"
-                    )
-                frame.arrays[instr.result] = int(instr.arg1)
-                frame.locals_declared.add(instr.result)
+                    # Dimensão só conhecida em execução (ex.: 's[] = lers()'): a
+                    # ranhura guarda um PONTEIRO (1 palavra) para memória dinâmica,
+                    # logo trata-se como um escalar — NÃO entra em frame.arrays.
+                    frame.locals_declared.add(instr.result)
+                else:
+                    frame.arrays[instr.result] = int(instr.arg1)
+                    frame.locals_declared.add(instr.result)
             elif instr.op in ("declare", "getparam"):
                 frame.locals_declared.add(instr.result)
 
@@ -383,9 +558,24 @@ class MIPSGenerator:
 
     def _h_binary(self, instr: TACInstruction) -> None:
         self._comment(str(instr))
+        op = instr.op
+        # Aritmética real: '+ - * /' quando algum dos envolvidos é real.
+        if op in ("+", "-", "*", "/") and (
+            self._is_real(instr.result)
+            or self._is_real(instr.arg1)
+            or self._is_real(instr.arg2)
+        ):
+            self._binary_real_arith(instr)
+            return
+        # Comparação real: relacional com algum operando real.
+        if op in ("<", "<=", ">", ">=", "==", "!=") and (
+            self._is_real(instr.arg1) or self._is_real(instr.arg2)
+        ):
+            self._binary_real_rel(instr)
+            return
+
         self._load(instr.arg1, "$t0")
         self._load(instr.arg2, "$t1")
-        op = instr.op
         if op == "+":
             self._ins("addu $t2, $t0, $t1")
         elif op == "-":
@@ -414,9 +604,46 @@ class MIPSGenerator:
             raise MIPSGenerationError(f"operador binário inesperado: {op}")
         self._store("$t2", instr.result)
 
+    def _binary_real_arith(self, instr: TACInstruction) -> None:
+        """'+ - * /' em vírgula flutuante de precisão simples."""
+        self._load_float(instr.arg1, "$f0", "$t0")
+        self._load_float(instr.arg2, "$f2", "$t1")
+        fop = {"+": "add.s", "-": "sub.s", "*": "mul.s", "/": "div.s"}[instr.op]
+        self._ins(f"{fop} $f4, $f0, $f2")
+        self._store_float("$f4", instr.result, "$t0")
+
+    def _binary_real_rel(self, instr: TACInstruction) -> None:
+        """Comparação relacional real -> inteiro lógico (0/1)."""
+        self._load_float(instr.arg1, "$f0", "$t0")
+        self._load_float(instr.arg2, "$f2", "$t1")
+        op = instr.op
+        # (compare, branch-que-deixa o resultado a 0). Operandos trocados nos
+        # casos '>' e '>=' para reutilizar c.lt.s / c.le.s.
+        compare, branch = {
+            "<":  ("c.lt.s $f0, $f2", "bc1f"),
+            "<=": ("c.le.s $f0, $f2", "bc1f"),
+            ">":  ("c.lt.s $f2, $f0", "bc1f"),
+            ">=": ("c.le.s $f2, $f0", "bc1f"),
+            "==": ("c.eq.s $f0, $f2", "bc1f"),
+            "!=": ("c.eq.s $f0, $f2", "bc1t"),
+        }[op]
+        end = self._new_helper_label("frel")
+        self._ins("li $t2, 0")
+        self._ins(compare)
+        self._ins(f"{branch} {end}")
+        self._ins("li $t2, 1")
+        self.lines.append(f"{end}:")
+        self._store("$t2", instr.result)
+
     def _h_uminus(self, instr: TACInstruction) -> None:
+        self._comment(str(instr))
         self._load(instr.arg1, "$t0")
-        self._ins("subu $t2, $zero, $t0")
+        if self._is_real(instr.result) or self._is_real(instr.arg1):
+            # Simétrico real = inverter o bit de sinal (bit 31).
+            self._ins("lui $t1, 0x8000")
+            self._ins("xor $t2, $t0, $t1")
+        else:
+            self._ins("subu $t2, $zero, $t0")
         self._store("$t2", instr.result)
 
     # ---- controlo de fluxo ----
@@ -494,9 +721,14 @@ class MIPSGenerator:
         value = instr.arg2
         self._comment(str(instr))
         if func == "escrever":
-            self._load(value, "$a0")
-            self._ins("li $v0, 1")     # print_int
-            self._ins("syscall")
+            if self._is_real(value):
+                self._load_float(value, "$f12", "$t0")
+                self._ins("li $v0, 2")     # print_float
+                self._ins("syscall")
+            else:
+                self._load(value, "$a0")
+                self._ins("li $v0, 1")     # print_int
+                self._ins("syscall")
             self._ins("li $a0, 10")    # '\n'
             self._ins("li $v0, 11")    # print_char
             self._ins("syscall")
@@ -505,6 +737,17 @@ class MIPSGenerator:
             self._ins("li $v0, 11")    # print_char
             self._ins("syscall")
         elif func == "escrevers":
+            self._emit_escrevers(value)
+        elif func == "escreverv":
+            self._emit_escreverv(value)
+        else:
+            raise MIPSGenerationError(
+                f"função de escrita '{func}' não reconhecida pelo gerador MIPS"
+            )
+
+    def _emit_escrevers(self, value: str) -> None:
+        """escrevers: cadeia literal (.asciiz) ou inteiro[] terminado em 0."""
+        if is_string_literal(value):
             label = self.string_pool.get(value)
             if label is None:
                 raise MIPSGenerationError(
@@ -514,11 +757,55 @@ class MIPSGenerator:
             self._ins(f"la $a0, {label}")
             self._ins("li $v0, 4")     # print_string
             self._ins("syscall")
+            return
+
+        # Cadeia em runtime (ex.: resultado de lers): inteiro[] terminado em 0.
+        # Imprime caráter a caráter até encontrar o terminador.
+        self._array_base(value, "$t3")
+        loop = self._new_helper_label("puts")
+        end = self._new_helper_label("putsend")
+        self.lines.append(f"{loop}:")
+        self._ins("lw $a0, 0($t3)")
+        self._ins(f"beq $a0, $zero, {end}")
+        self._ins("li $v0, 11")        # print_char
+        self._ins("syscall")
+        self._ins("addiu $t3, $t3, 4")
+        self._ins(f"j {loop}")
+        self.lines.append(f"{end}:")
+
+    def _emit_escreverv(self, value: str) -> None:
+        """escreverv: imprime cada elemento (dimensão tem de ser estática)."""
+        if self.frame is not None and self.frame.is_local_array(value):
+            size = self.frame.slots[value][2]
+        elif value in self.global_arrays:
+            size = self.global_arrays[value]
         else:
             raise MIPSGenerationError(
-                f"'{func}' ainda não suportado no gerador MIPS "
-                "(escreverv fica para a próxima iteração)"
+                f"'escreverv' requer um vetor de dimensão conhecida em compilação; "
+                f"'{value}' não a tem (vetor-parâmetro ou de dimensão dinâmica)"
             )
+
+        is_real_elem = value in self.real_arrays
+        self._array_base(value, "$t3")
+        self._ins(f"li $t5, {size}")       # nº de elementos por imprimir
+        loop = self._new_helper_label("pv")
+        end = self._new_helper_label("pvend")
+        self.lines.append(f"{loop}:")
+        self._ins(f"blez $t5, {end}")
+        if is_real_elem:
+            self._ins("lwc1 $f12, 0($t3)")
+            self._ins("li $v0, 2")         # print_float
+        else:
+            self._ins("lw $a0, 0($t3)")
+            self._ins("li $v0, 1")         # print_int
+        self._ins("syscall")
+        self._ins("li $a0, 10")            # '\n' após cada elemento
+        self._ins("li $v0, 11")
+        self._ins("syscall")
+        self._ins("addiu $t3, $t3, 4")
+        self._ins("addiu $t5, $t5, -1")
+        self._ins(f"j {loop}")
+        self.lines.append(f"{end}:")
 
     # ---- vetores ----
 
@@ -575,13 +862,59 @@ class MIPSGenerator:
     def _h_nop(self, instr: TACInstruction) -> None:
         pass
 
-    # ---- ainda não suportado (próxima iteração) ----
+    # ---- conversões numéricas e cast ----
 
-    def _h_not_yet(self, instr: TACInstruction) -> None:
-        raise MIPSGenerationError(
-            f"instrução TAC '{instr.op}' (suporte a reais/cast) fica para a "
-            "próxima iteração do gerador MIPS"
-        )
+    def _emit_int_to_real(self, src: str, dst: str) -> None:
+        self._load(src, "$t0")
+        self._ins("mtc1 $t0, $f0")
+        self._ins("cvt.s.w $f0, $f0")   # inteiro -> real (precisão simples)
+        self._ins("mfc1 $t0, $f0")
+        self._store("$t0", dst)
+
+    def _emit_real_to_int(self, src: str, dst: str) -> None:
+        self._load(src, "$t0")
+        self._ins("mtc1 $t0, $f0")
+        self._ins("trunc.w.s $f0, $f0")  # real -> inteiro truncando para zero
+        self._ins("mfc1 $t0, $f0")
+        self._store("$t0", dst)
+
+    def _h_int_to_real(self, instr: TACInstruction) -> None:
+        self._comment(str(instr))
+        self._emit_int_to_real(instr.arg1, instr.result)
+
+    def _h_real_to_int(self, instr: TACInstruction) -> None:
+        self._comment(str(instr))
+        self._emit_real_to_int(instr.arg1, instr.result)
+
+    def _h_cast(self, instr: TACInstruction) -> None:
+        # result = (arg2) arg1   ; arg2 in {"inteiro","real"}
+        self._comment(str(instr))
+        target = instr.arg2
+        source_real = self._is_real(instr.arg1)
+        if target == "real":
+            if source_real:
+                self._load(instr.arg1, "$t0")      # já é real: copia os bits
+                self._store("$t0", instr.result)
+            else:
+                self._emit_int_to_real(instr.arg1, instr.result)
+        elif target == "inteiro":
+            if source_real:
+                self._emit_real_to_int(instr.arg1, instr.result)
+            else:
+                self._load(instr.arg1, "$t0")      # já é inteiro: copia os bits
+                self._store("$t0", instr.result)
+        else:
+            raise MIPSGenerationError(f"cast para tipo não suportado: '{target}'")
+
+    # ---- leitura de cadeia (lers) ----
+
+    def _h_reads(self, instr: TACInstruction) -> None:
+        # lers(): lê uma linha e devolve um inteiro[] (terminado em 0) em memória
+        # dinâmica. A rotina de runtime __lers faz o trabalho e devolve a base.
+        self._comment(str(instr))
+        self._lers_helper_needed = True
+        self._ins("jal __lers")
+        self._store("$v0", instr.result)
 
     _HANDLERS = {
         "assign": _h_assign,
@@ -596,19 +929,27 @@ class MIPSGenerator:
         "array_store": _h_array_store, "array_init": _h_array_init,
         "array_load": _h_array_load,
         "declare": _h_declare, "array_decl": _h_array_decl, "nop": _h_nop,
-        # Reservado para a próxima iteração:
-        "cast": _h_not_yet, "int_to_real": _h_not_yet, "real_to_int": _h_not_yet,
-        "reads": _h_not_yet,
+        # Reais, cast e leitura de cadeia:
+        "cast": _h_cast, "int_to_real": _h_int_to_real, "real_to_int": _h_real_to_int,
+        "reads": _h_reads,
     }
 
     # =====================================================
     # Auxiliares de baixo nível
     # =====================================================
 
+    def _real_bits(self, text: str) -> int:
+        """Padrão IEEE-754 de precisão simples (32 bits, sem sinal) de um real."""
+        return struct.unpack("<I", struct.pack("<f", float(text)))[0]
+
     def _load(self, operand: str, reg: str) -> None:
-        """Carrega o VALOR de um operando escalar para 'reg'."""
+        """Carrega o VALOR (32 bits) de um operando escalar para 'reg'."""
         if is_int_literal(operand):
             self._ins(f"li {reg}, {operand}")
+            return
+        if is_real_literal(operand):
+            # Literal real -> carrega o seu padrão de bits (circula como inteiro).
+            self._ins(f"li {reg}, 0x{self._real_bits(operand):08X}    # {operand}")
             return
         if self.frame is not None and self.frame.has(operand) and not self.frame.is_local_array(operand):
             off = self.frame.fp_offset(operand)
@@ -668,6 +1009,64 @@ class MIPSGenerator:
             self._ins(f"lw {reg}, {off}($fp)")
             return
         raise MIPSGenerationError(f"não consigo determinar a base do vetor '{name}'")
+
+    def _load_float(self, operand: str, freg: str, gpr: str) -> None:
+        """
+        Carrega 'operand' no registo de vírgula flutuante 'freg'.
+        Reaproveita _load (toda a lógica de endereçamento) para trazer os 32 bits
+        a um GPR e depois move-os para o coprocessador 1. Se o operando for
+        inteiro (caso de comparação mista real/inteiro), promove-o com cvt.s.w.
+        """
+        self._load(operand, gpr)
+        self._ins(f"mtc1 {gpr}, {freg}")
+        if not self._is_real(operand):
+            self._ins(f"cvt.s.w {freg}, {freg}")
+
+    def _store_float(self, freg: str, name: str, gpr: str) -> None:
+        """Guarda o real em 'freg' (como 32 bits) no escalar 'name'."""
+        self._ins(f"mfc1 {gpr}, {freg}")
+        self._store(gpr, name)
+
+    def _emit_lers_helper(self) -> None:
+        """
+        Rotina de runtime para lers(): lê uma linha do stdin e devolve um
+        inteiro[] (uma palavra por caráter) terminado em 0, em memória dinâmica.
+
+        Lê a linha inteira com read_string (syscall 8, estilo fgets) para um
+        buffer de bytes e depois expande cada byte para uma palavra. (Lê-se a
+        linha de uma vez porque o read_char do MARS consome a linha toda
+        internamente e nunca devolve o '\\n'.) Base devolvida em $v0. É uma folha:
+        só usa $v0/$a0/$t*, que neste back-end nunca guardam valores vivos entre
+        instruções TAC.
+        """
+        self.lines.append("# ---- runtime: lers (lê uma linha como inteiro[] terminado em 0) ----")
+        self.lines.append("__lers:")
+        # 1) ler a linha para o buffer de bytes.
+        self._ins("la $a0, __lers_buf")
+        self._ins("li $a1, 1024")
+        self._ins("li $v0, 8")               # read_string (estilo fgets)
+        self._ins("syscall")
+        # 2) alocar o inteiro[] no heap (256 palavras) e preparar cursores.
+        self._ins("li $v0, 9")               # sbrk
+        self._ins("li $a0, 1024")
+        self._ins("syscall")
+        self._ins("move $t0, $v0")           # base do inteiro[]
+        self._ins("move $t1, $v0")           # cursor de escrita (palavras)
+        self._ins("la $t2, __lers_buf")      # cursor de leitura (bytes)
+        self.lines.append("__lers_loop:")
+        self._ins("lb $t4, 0($t2)")          # próximo byte
+        self._ins("beq $t4, $zero, __lers_done")   # fim da cadeia ('\\0')
+        self._ins("li $t5, 10")
+        self._ins("beq $t4, $t5, __lers_done")     # fim de linha '\\n' (não copiar)
+        self._ins("sw $t4, 0($t1)")          # guardar o caráter como palavra
+        self._ins("addiu $t1, $t1, 4")
+        self._ins("addiu $t2, $t2, 1")
+        self._ins("j __lers_loop")
+        self.lines.append("__lers_done:")
+        self._ins("sw $zero, 0($t1)")        # terminador 0
+        self._ins("move $v0, $t0")           # devolve a base
+        self._ins("jr $ra")
+        self.lines.append("")
 
     def _new_helper_label(self, prefix: str) -> str:
         self._helper_label_counter += 1
