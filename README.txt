@@ -1,5 +1,5 @@
 ========================================================================
-E-FOLIO B - COMPILACAO (UC 21018)
+E-FOLIO GLOBAL - COMPILACAO (UC 21018)
 Licenciatura em Engenharia Informatica
 Universidade Aberta - 2025/2026
 ========================================================================
@@ -21,7 +21,8 @@ pipeline completo de compilacao:
   - construcao da Arvore de Sintaxe Abstrata (AST);
   - analise semantica;
   - geracao de codigo intermedio TAC (Three Address Code);
-  - OTIMIZACAO do codigo intermedio TAC.
+  - OTIMIZACAO do codigo intermedio TAC;
+  - GERACAO DE CODIGO FINAL MIPS32.
 Os erros detetados em qualquer fase sao mostrados no ecra.
 
 ------------------------------------------------------------------------
@@ -38,6 +39,7 @@ Gramatica e codigo fonte:
   optimizer.py       - otimizacao do codigo intermedio TAC
   error_handler.py   - tratamento de erros lexicos e sintaticos
   run_tests.py       - execucao automatica da bateria de testes
+  codegen_mips.py    - geracao de codigo final MIPS32 a partir de TAC otimizado
 
 Ficheiros gerados pelo ANTLR (a partir de MOCP.g4):
   MOCPLexer.py, MOCPParser.py, MOCPVisitor.py, MOCPListener.py
@@ -77,6 +79,9 @@ Os ficheiros gerados ja estao incluidos. Para os regenerar:
 5. EXECUCAO
 ------------------------------------------------------------------------
   python main.py <ficheiro.mocp> [saida_ast.txt] [saida_tac.txt]
+Nota:
+A geracao de codigo MIPS32 e efetuada atraves do modulo
+codegen_mips.py descrito na secao seguinte.
 
 O primeiro argumento (ficheiro fonte) e obrigatorio. Os dois argumentos
 seguintes sao opcionais e indicam ficheiros onde guardar a AST e o TAC.
@@ -87,7 +92,40 @@ Exemplos:
  python main.py Testes/teste_erros_semanticos.mocp
 
 ------------------------------------------------------------------------
-6. FUNCIONAMENTO (7 fases do pipeline)
+6. GERACAO DE CODIGO FINAL MIPS32
+------------------------------------------------------------------------
+
+O projeto inclui um backend capaz de traduzir TAC otimizado para
+assembly MIPS32.
+
+Gerar ficheiro assembly:
+
+  python codegen_mips.py <entrada.mocp> <saida.asm>
+
+Exemplos:
+
+  python codegen_mips.py Testes/spec_fatorial.mocp Testes/spec_fatorial.asm
+
+  python codegen_mips.py Testes/spec_media.mocp Testes/spec_media.asm
+
+
+------------------------------------------------------------------------
+7. EXECUCAO DO CODIGO MIPS
+------------------------------------------------------------------------
+
+Os ficheiros .asm gerados foram desenvolvidos para o simulador MARS.
+
+Passos:
+
+1. Abrir o simulador MARS.
+2. Abrir o ficheiro .asm gerado.
+3. Selecionar Assemble.
+4. Selecionar Run.
+
+Os exemplos fornecidos foram validados neste ambiente.
+
+------------------------------------------------------------------------
+8. FUNCIONAMENTO (8 fases do pipeline)
 ------------------------------------------------------------------------
   1. Leitura do ficheiro fonte.
   2. Analise lexica - tokenizacao com ANTLR e detecao de tokens C
@@ -100,22 +138,24 @@ Exemplos:
      'principal', funcoes com 'retornar'.
   6. Geracao de codigo intermedio TAC.
   7. Otimizacao do codigo intermedio TAC.
+  8. Geracao de codigo final MIPS32.
 
 ------------------------------------------------------------------------
-7. SAIDA ESPERADA
+9. SAIDA ESPERADA
 ------------------------------------------------------------------------
 Programa valido:
   - mensagem "Analise concluida com sucesso";
   - impressao da AST;
   - seccao "Codigo intermedio TAC original";
-  - seccao "Codigo intermedio TAC otimizado".
+  - seccao "Codigo intermedio TAC otimizado";
+  - geracao opcional de ficheiro assembly MIPS32.
 
 Programa com erros:
   - mensagem "Foram encontrados erros:" seguida das linhas de erro,
     cada uma classificada como [LEXICO], [SINTATICO] ou [SEMANTICO].
 
 ------------------------------------------------------------------------
-8. TESTES AUTOMATICOS
+10. TESTES AUTOMATICOS
 ------------------------------------------------------------------------
   python run_tests.py
 
@@ -134,7 +174,7 @@ Se a pasta `Testes` não existir ou não contiver ficheiros `.mocp`, o
 script avisará e terminará sem executar testes.
 
 ------------------------------------------------------------------------
-9. OBSERVACOES SOBRE A LINGUAGEM MOCP
+11. OBSERVACOES SOBRE A LINGUAGEM MOCP
 ------------------------------------------------------------------------
   - As palavras-chave sao em portugues (inteiro, real, vazio, se, senao,
     enquanto, para, retornar, etc.).
@@ -144,4 +184,13 @@ script avisará e terminará sem executar testes.
   - Os blocos sao sempre delimitados por chavetas { }.
   - Os prototipos das funcoes devem aparecer antes das definicoes de
     funcoes e das variaveis globais.
+
+------------------------------------------------------------------------
+12. NOTA SOBRE O E-FOLIO GLOBAL
+------------------------------------------------------------------------
+
+Esta versao corresponde ao E-Folio Global e integra todas as
+funcionalidades desenvolvidas nos E-Folios A e B, bem como as melhorias
+introduzidas posteriormente, incluindo novas validacoes semanticas,
+otimizacoes adicionais e geracao de codigo final MIPS32.
 ========================================================================
