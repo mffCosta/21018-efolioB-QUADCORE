@@ -83,7 +83,9 @@ from tac import (
 
 
 class MIPSGenerationError(Exception):
-    """Erro durante a geração de código MIPS (ex.: construção ainda não suportada)."""
+    """Erro interno do gerador MIPS: TAC inesperado/malformado. É uma rede de
+    segurança (defesa contra invariantes violadas) — não deve ocorrer para
+    programas aceites pelo front-end, cuja linguagem o back-end cobre por completo."""
     pass
 
 
@@ -129,6 +131,13 @@ class MIPSGenerator:
         self.global_scalars: Dict[str, str] = {}  # nome -> valor inicial textual
         self.global_arrays: Dict[str, int] = {}   # nome -> tamanho
         self.global_reals: Set[str] = set()        # globais escalares de tipo real
+        # Vetores globais com inicializador literal constante ('{...}'):
+        # nome -> {indice: valor}; emitidos como '.word'/'.float' no .data.
+        self.global_array_init: Dict[str, Dict[int, str]] = {}
+        self.global_array_real: Set[str] = set()   # desses, os de elementos reais
+        # Inicialização global NÃO-constante (ex.: g = lers(), g = f(...)):
+        # corre num arranque sintético '__init' antes de 'principal'.
+        self.global_init_code: List[TACInstruction] = []
         self.func_names: set = set()
         self.frame: Optional[_Frame] = None
         self.pending_params: List[str] = []
@@ -155,6 +164,11 @@ class MIPSGenerator:
         # Recolher globais (escalares/vetores) e strings.
         self._collect_globals(pre_func)
         self._collect_strings(instructions)
+
+        # Inicialização global não-constante (ex.: 'g = lers()', 'g = f(...)')
+        # corre num arranque sintético '__init', tratado como mais uma função.
+        if self.global_init_code:
+            functions = functions + [("__init", self.global_init_code)]
 
         # Inferir, por função, que nomes guardam reais (decide inteiro vs $f*).
         self._infer_types(functions)
@@ -204,42 +218,43 @@ class MIPSGenerator:
     # =====================================================
 
     def _collect_globals(self, pre_func: List[TACInstruction]) -> None:
+        # 1ª passagem: declarações reservam armazenamento no .data. Um vetor de
+        # dimensão dinâmica ('?') guarda um PONTEIRO, logo trata-se como escalar.
         for instr in pre_func:
             if instr.op == "declare":
                 self.global_scalars.setdefault(instr.result, "0")
             elif instr.op == "array_decl":
                 if instr.arg1 == "?":
-                    raise MIPSGenerationError(
-                        "vetor global de dimensão determinada em execução ('?') "
-                        "ainda não suportado no gerador MIPS"
-                    )
-                self.global_arrays[instr.result] = int(instr.arg1)
-            elif instr.op == "assign" and instr.result in self.global_scalars:
-                # Só inicializadores constantes (literais inteiros ou reais) cabem
-                # no .data. Os reais marcam-se para serem emitidos como '.float'.
-                if is_int_literal(instr.arg1):
-                    self.global_scalars[instr.result] = instr.arg1
-                elif is_real_literal(instr.arg1):
-                    self.global_scalars[instr.result] = instr.arg1
-                    self.global_reals.add(instr.result)
+                    self.global_scalars.setdefault(instr.result, "0")
                 else:
-                    raise MIPSGenerationError(
-                        f"inicialização do global '{instr.result}' com valor "
-                        f"não-constante ('{instr.arg1}') ainda não suportada no "
-                        "gerador MIPS"
-                    )
-            elif instr.op in ("array_zero_init", "nop"):
-                # 'array_zero_init' de um global é redundante (o '.space' do .data
-                # já fica a zero) e 'nop' não gera código: ambos são ignorados.
-                pass
+                    self.global_arrays[instr.result] = int(instr.arg1)
+
+        # 2ª passagem: inicializadores. Os constantes em compilação vão para o
+        # .data; os restantes (lers(), chamadas, expressões não dobráveis) são
+        # adiados para o arranque sintético '__init' (self.global_init_code).
+        for instr in pre_func:
+            op = instr.op
+            if op in ("declare", "array_decl", "nop", "array_zero_init"):
+                continue
+            if op == "assign" and instr.result in self.global_scalars \
+                    and is_int_literal(instr.arg1):
+                self.global_scalars[instr.result] = instr.arg1
+            elif op == "assign" and instr.result in self.global_scalars \
+                    and is_real_literal(instr.arg1):
+                self.global_scalars[instr.result] = instr.arg1
+                self.global_reals.add(instr.result)
+            elif op == "array_init" and instr.result in self.global_arrays \
+                    and is_int_literal(instr.arg1) \
+                    and (is_int_literal(instr.arg2) or is_real_literal(instr.arg2)):
+                # Elemento constante de um vetor literal global -> vai para o .data.
+                self.global_array_init.setdefault(instr.result, {})[
+                    int(instr.arg1)
+                ] = instr.arg2
+                if is_real_literal(instr.arg2):
+                    self.global_array_real.add(instr.result)
             else:
-                # Defensivo: nunca deixar cair silenciosamente uma instrução de
-                # escopo global que não saibamos materializar em dados estáticos.
-                raise MIPSGenerationError(
-                    f"instrução TAC '{instr.op}' no escopo global ainda não "
-                    "suportada pelo gerador MIPS (apenas declarações e "
-                    "inicializações constantes)"
-                )
+                # Inicialização não-constante: executar no arranque ('__init').
+                self.global_init_code.append(instr)
 
     def _collect_strings(self, instructions: List[TACInstruction]) -> None:
         for instr in instructions:
@@ -388,7 +403,17 @@ class MIPSGenerator:
                 self.lines.append(f"g_{name}: .word {value}")
 
         for name, size in self.global_arrays.items():
-            self.lines.append(f"g_{name}: .space {4 * size}")
+            if name in self.global_array_init:
+                # Vetor com inicializador literal constante -> valores no .data.
+                values = self.global_array_init[name]
+                if name in self.global_array_real:
+                    items = [str(values.get(i, "0.0")) for i in range(size)]
+                    self.lines.append(f"g_{name}: .float " + ", ".join(items))
+                else:
+                    items = [str(values.get(i, "0")) for i in range(size)]
+                    self.lines.append(f"g_{name}: .word " + ", ".join(items))
+            else:
+                self.lines.append(f"g_{name}: .space {4 * size}")
 
         for literal, label in self.string_pool.items():
             # 'literal' já vem com aspas e escapes válidos do TAC.
@@ -416,8 +441,11 @@ class MIPSGenerator:
         self.lines.append(".globl main")
         self.lines.append("")
 
-        # Arranque: chama 'principal' e termina o programa (syscall 10).
+        # Arranque: inicializa globais não-constantes (se houver), chama
+        # 'principal' e termina o programa (syscall 10).
         self.lines.append("main:")
+        if self.global_init_code:
+            self.lines.append("    jal f___init")
         self.lines.append("    jal f_principal")
         self.lines.append("    li $v0, 10")
         self.lines.append("    syscall")
@@ -545,8 +573,8 @@ class MIPSGenerator:
         handler = self._HANDLERS.get(op)
         if handler is None:
             raise MIPSGenerationError(
-                f"instrução TAC '{op}' ainda não suportada pelo gerador MIPS "
-                f"(esta iteração cobre o subconjunto inteiro)"
+                f"instrução TAC '{op}' inesperada no gerador MIPS "
+                f"(TAC malformado ou operação não prevista por este back-end)"
             )
         handler(self, instr)
 
@@ -1007,6 +1035,10 @@ class MIPSGenerator:
         if self.frame is not None and self.frame.has(name):
             off = self.frame.fp_offset(name)
             self._ins(f"lw {reg}, {off}($fp)")
+            return
+        # Vetor global de dimensão dinâmica: a ranhura escalar guarda o ponteiro.
+        if name in self.global_scalars:
+            self._ins(f"lw {reg}, g_{name}")
             return
         raise MIPSGenerationError(f"não consigo determinar a base do vetor '{name}'")
 

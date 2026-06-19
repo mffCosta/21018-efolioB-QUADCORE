@@ -1,0 +1,1 @@
+[SEMÂNTICO] 'escreverv' (argumento 1) exige um vetor de dimensão fixa conhecida em compilação; para um parâmetro-vetor ou vetor dinâmico, percorra-o com um ciclo e 'escrever'.

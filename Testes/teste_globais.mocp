@@ -1,0 +1,26 @@
+/*
+ * teste_globais.mocp — inicializacao de variaveis GLOBAIS (E-folio Global)
+ * UC 21018 — Compilação, Universidade Aberta, 2025/2026
+ * Grupo QUADCORE: Maria Costa (2304361) | João Rodrigues (2203474) | Nuno Rolo (1900405) | Fábio Oliveira (1800960)
+ * Testa: global escalar constante (-> .data), vetor global literal (-> .data .word),
+ *        global inicializado por chamada de funcao e vetor global dinamico (lers)
+ *        — estes dois resolvidos no arranque sintetico (__init), antes de principal.
+ */
+inteiro dobro(inteiro x);
+vazio principal(vazio);
+
+inteiro base = 10;             /* escalar constante      -> .data .word     */
+inteiro tabela[] = {3, 6, 9};  /* vetor literal          -> .data .word     */
+inteiro dobrado = dobro(21);   /* init por chamada       -> arranque __init */
+inteiro linha[] = lers();      /* vetor de dim. dinamica -> arranque __init */
+
+inteiro dobro(inteiro x) {
+    retornar x * 2;
+}
+
+vazio principal(vazio) {
+    escrever(base);
+    escreverv(tabela);
+    escrever(dobrado);
+    escrevers(linha);
+}

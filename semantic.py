@@ -70,6 +70,9 @@ class VariableSymbol:
     name: str
     var_type: str
     is_array: bool = False
+    # Dimensão estática do vetor, conhecida em compilação (None para escalares,
+    # parâmetros-vetor e vetores de dimensão dinâmica, ex.: '[] = lers()').
+    array_size: Optional[int] = None
 
 
 @dataclass
@@ -393,7 +396,7 @@ class SemanticAnalyzer:
                         f"O vetor '{item.name}' deve ter tamanho positivo."
                     )
                 self.symbols.declare(
-                    VariableSymbol(item.name, decl.var_type, True)
+                    VariableSymbol(item.name, decl.var_type, True, item.size)
                 )
 
             elif isinstance(item, VarUnsizedArrayDeclNode):
@@ -407,7 +410,7 @@ class SemanticAnalyzer:
                     self._check_assignment_compatible(decl.var_type, expr_type)
 
                 self.symbols.declare(
-                    VariableSymbol(item.name, decl.var_type, True)
+                    VariableSymbol(item.name, decl.var_type, True, len(item.values))
                 )
 
             elif isinstance(item, VarArrayExprInitDeclNode):
@@ -661,11 +664,22 @@ class SemanticAnalyzer:
             return fn.return_type
 
         if call.name == "escreverv":
-            for i, arg_type in enumerate(arg_types, start=1):
+            for i, (arg_type, arg) in enumerate(zip(arg_types, call.args), start=1):
                 if not arg_type.endswith("[]"):
                     raise SemanticError(
                         f"Tipo incompatível no argumento {i} da função 'escreverv': "
                         f"recebido '{arg_type}', esperado vetor."
+                    )
+                # 'escreverv' imprime TODOS os elementos, logo precisa da dimensão
+                # conhecida em compilação: vetor local de tamanho fixo ou global.
+                # Parâmetros-vetor e vetores de dimensão dinâmica não a têm.
+                symbol = (self.symbols.lookup(arg.name)
+                          if isinstance(arg, IdentifierNode) else None)
+                if symbol is None or symbol.array_size is None:
+                    raise SemanticError(
+                        f"'escreverv' (argumento {i}) exige um vetor de dimensão "
+                        f"fixa conhecida em compilação; para um parâmetro-vetor ou "
+                        f"vetor dinâmico, percorra-o com um ciclo e 'escrever'."
                     )
             return fn.return_type
 

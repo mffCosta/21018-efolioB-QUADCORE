@@ -40,10 +40,16 @@ Gramatica e codigo fonte:
   error_handler.py   - tratamento de erros lexicos e sintaticos
   run_tests.py       - execucao automatica da bateria de testes
   codegen_mips.py    - geracao de codigo final MIPS32 a partir de TAC otimizado
+  run_codegen_tests.py - testes de execucao do MIPS gerado no simulador MARS
 
 Ficheiros gerados pelo ANTLR (a partir de MOCP.g4):
   MOCPLexer.py, MOCPParser.py, MOCPVisitor.py, MOCPListener.py
   MOCP.tokens, MOCPLexer.tokens, MOCP.interp, MOCPLexer.interp
+
+Simulador e artefactos de teste:
+  Mars4_5.jar        - simulador MARS (binario de terceiros)
+  Testes/*.asm       - assembly MIPS de referencia (um por programa valido)
+  Testes/expected/   - saidas esperadas do pipeline (usadas por run_tests.py)
 
 Programas de teste (.mocp):
   exemplo_correto.mocp        - programa valido (prototipos, recursao,
@@ -55,9 +61,12 @@ Programas de teste (.mocp):
   teste_erros_lexicos.mocp    - erros lexicos
   teste_erros_semanticos.mocp - erros semanticos
   teste_erros_variados.mocp   - varios tipos de erro em simultaneo
+  teste_erros_escreverv.mocp  - erro semantico: escreverv exige vetor de dim. fixa
   spec_fatorial.mocp          - exemplo canonico: Fatorial Recursivo
   spec_media.mocp             - exemplo canonico: Media de um vetor
   teste_cobertura.mocp        - cobre construcoes nao cobertas pelos restantes
+  teste_globais.mocp          - inicializacao de variaveis globais (escalar,
+                                vetor literal, vetor dinamico e por chamada)
 
 ------------------------------------------------------------------------
 3. REQUISITOS
@@ -65,8 +74,12 @@ Programas de teste (.mocp):
   - Python 3.10 ou superior
   - Runtime ANTLR para Python:
         pip install antlr4-python3-runtime==4.13.2
-  - Java 11 ou superior - APENAS se quiser regenerar o parser a partir
-    da gramatica (nao e necessario para executar o projeto).
+  - Java 11 ou superior - necessario para EXECUTAR o codigo MIPS gerado no
+    simulador MARS e para os testes de execucao (run_codegen_tests.py).
+    Tambem permite regenerar o parser ANTLR (seccao 4). O pipeline ate a
+    geracao do .asm corre apenas com Python.
+  - Simulador MARS (Mars4_5.jar) colocado na raiz do projeto - binario de
+    terceiros. Necessario apenas para executar/testar o codigo MIPS gerado.
 
 ------------------------------------------------------------------------
 4. REGENERAR O PARSER ANTLR (opcional)
@@ -115,14 +128,20 @@ Exemplos:
 
 Os ficheiros .asm gerados foram desenvolvidos para o simulador MARS.
 
-Passos:
+No ambiente grafico do MARS:
+  1. Abrir o simulador MARS.
+  2. Abrir o ficheiro .asm gerado.
+  3. Selecionar Assemble.
+  4. Selecionar Run.
+  (Os programas que leem dados - ex.: spec_fatorial, spec_media - esperam a
+   entrada na janela de I/O do Run, um inteiro por linha.)
 
-1. Abrir o simulador MARS.
-2. Abrir o ficheiro .asm gerado.
-3. Selecionar Assemble.
-4. Selecionar Run.
+Em linha de comando (sem interface grafica):
+  java -jar Mars4_5.jar nc sm <ficheiro.asm>
+  (nc = sem cabecalho; sm = arranca no rotulo 'main'; a entrada vem do stdin,
+   ex.: printf '5\n' | java -jar Mars4_5.jar nc sm Testes/spec_fatorial.asm)
 
-Os exemplos fornecidos foram validados neste ambiente.
+A correcao dos exemplos foi validada automaticamente (ver seccao 10.1).
 
 ------------------------------------------------------------------------
 8. FUNCIONAMENTO (8 fases do pipeline)
@@ -143,16 +162,22 @@ Os exemplos fornecidos foram validados neste ambiente.
 ------------------------------------------------------------------------
 9. SAIDA ESPERADA
 ------------------------------------------------------------------------
-Programa valido:
-  - mensagem "Analise concluida com sucesso";
-  - impressao da AST;
-  - seccao "Codigo intermedio TAC original";
-  - seccao "Codigo intermedio TAC otimizado";
-  - geracao opcional de ficheiro assembly MIPS32.
+Programa valido (codigo de saida 0) - main.py mostra:
+  - "Análise concluída com sucesso.";
+  - a AST ("AST gerada:");
+  - "Código intermédio TAC original:";
+  - "Código intermédio TAC otimizado:".
+  (A geracao do assembly MIPS32 e feita a parte, por codegen_mips.py - seccao 6.)
 
-Programa com erros:
-  - mensagem "Foram encontrados erros:" seguida das linhas de erro,
-    cada uma classificada como [LEXICO], [SINTATICO] ou [SEMANTICO].
+Programa com erros (codigo de saida 1) - o formato depende da fase:
+  - Erros lexicos/sintaticos: a linha "Foram encontrados erros:" seguida de
+    uma linha por erro, p. ex.:
+        [LÉXICO] linha 10, coluna 8: carácter inesperado '@'.
+        [LÉXICO/SINTÁTICO] linha 16, coluna 0: Palavra-chave C 'int'
+        detetada. Em MOCP use 'inteiro'.
+  - Erro semantico: e mostrado diretamente (sem cabecalho) e a analise para
+    no primeiro erro, p. ex.:
+        [SEMÂNTICO] Variável 'y' usada sem declaração prévia.
 
 ------------------------------------------------------------------------
 10. TESTES AUTOMATICOS
@@ -172,6 +197,30 @@ Exemplos:
 
 Se a pasta `Testes` não existir ou não contiver ficheiros `.mocp`, o
 script avisará e terminará sem executar testes.
+
+O `run_tests.py` cobre duas fases: (1) o pipeline principal (main.py) e
+(2) a geração MIPS, comparando a ESTRUTURA do .asm gerado com um .asm de
+referência (deteta regressões no gerador).
+
+------------------------------------------------------------------------
+10.1 TESTES DE EXECUCAO DO CODIGO MIPS GERADO
+------------------------------------------------------------------------
+  python run_codegen_tests.py
+
+Enquanto o run_tests.py confirma a estrutura do assembly, o script
+run_codegen_tests.py valida que o codigo gerado esta correto ao ser
+efetivamente executado. Para cada programa valido:
+
+  .mocp --(codegen_mips.py)--> .asm --(MARS)--> saida ==? esperado
+
+ou seja, gera o assembly, corre-o no simulador MARS (Mars4_5.jar) com uma
+entrada definida e compara a saida do programa com a saida esperada
+(calculada a mao a partir da semantica de cada programa). E a prova de
+execucao exigida pelo enunciado do E-folio Global.
+
+Requisitos: Java (para o MARS) e o ficheiro Mars4_5.jar na raiz do
+projeto. Se o Java/MARS nao estiverem disponiveis, os testes de execucao
+sao ignorados com aviso (sem falhar ambientes sem Java).
 
 ------------------------------------------------------------------------
 11. OBSERVACOES SOBRE A LINGUAGEM MOCP

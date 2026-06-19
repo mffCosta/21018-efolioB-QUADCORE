@@ -1,0 +1,22 @@
+/*
+ * teste_erros_escreverv.mocp — erro semantico (E-folio Global)
+ * UC 21018 — Compilação, Universidade Aberta, 2025/2026
+ * Grupo QUADCORE: Maria Costa (2304361) | João Rodrigues (2203474) | Nuno Rolo (1900405) | Fábio Oliveira (1800960)
+ * 'escreverv' imprime todos os elementos, logo exige um vetor de dimensao fixa
+ * conhecida em compilacao. Aplicado a um PARAMETRO-vetor (sem dimensao) deve ser
+ * rejeitado pela analise semantica (e nao falhar so na geracao de codigo).
+ */
+vazio mostra(inteiro v[], inteiro n);
+vazio principal(vazio);
+
+vazio mostra(inteiro v[], inteiro n) {
+    escreverv(v);
+}
+
+vazio principal(vazio) {
+    inteiro a[3];
+    a[0] = 1;
+    a[1] = 2;
+    a[2] = 3;
+    mostra(a, 3);
+}
