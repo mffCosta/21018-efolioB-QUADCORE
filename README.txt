@@ -144,7 +144,7 @@ Em linha de comando (sem interface grafica):
 A correcao dos exemplos foi validada automaticamente (ver seccao 10.1).
 
 ------------------------------------------------------------------------
-8. FUNCIONAMENTO (8 fases do pipeline)
+8. FUNCIONAMENTO (fases do pipeline)
 ------------------------------------------------------------------------
   1. Leitura do ficheiro fonte.
   2. Analise lexica - tokenizacao com ANTLR e detecao de tokens C
@@ -158,6 +158,10 @@ A correcao dos exemplos foi validada automaticamente (ver seccao 10.1).
   6. Geracao de codigo intermedio TAC.
   7. Otimizacao do codigo intermedio TAC.
   8. Geracao de codigo final MIPS32.
+
+  Nota: as fases 1 a 7 correm no main.py (que termina no TAC otimizado); a
+  fase 8 (geracao MIPS32) e feita a parte pelo entry-point separado
+  codegen_mips.py (ver seccoes 5 e 6).
 
 ------------------------------------------------------------------------
 9. SAIDA ESPERADA
